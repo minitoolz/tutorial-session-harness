@@ -1,0 +1,11 @@
+# Filled in by `tutor new`. The agent keeps `order` up to date: it is the
+# exact sequence of pages rendered into the PDF.
+title: "__TITLE__"
+subtitle: ""
+author: "__AUTHOR__"
+date: "__DATE__"
+order:
+  - abstract.md
+  - intro.md
+  - contents.md
+  - glossary.md

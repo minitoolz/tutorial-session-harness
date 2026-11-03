@@ -1,0 +1,9 @@
+# Base pandoc options shared by every build. Per-user values (fonts, language,
+# paper size, ...) come from SETTINGS.md and are merged in by `tutor build`.
+from: markdown+tex_math_dollars+raw_html+raw_tex+pipe_tables+grid_tables+footnotes+implicit_figures+link_attributes+fenced_code_attributes
+standalone: true
+pdf-engine: xelatex
+highlight-style: tango
+variables:
+  documentclass: article
+  links-as-notes: false

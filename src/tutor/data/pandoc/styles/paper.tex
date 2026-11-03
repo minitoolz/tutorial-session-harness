@@ -1,0 +1,21 @@
+% style: paper — academic look: compact headings, running header, numbered eqs by section
+\usepackage{mathtools}
+\usepackage{bm}
+\usepackage{float}
+\floatplacement{figure}{htbp}
+\usepackage[font=small,labelfont=bf]{caption}
+\usepackage{booktabs}
+\usepackage{titlesec}
+\titleformat*{\section}{\large\bfseries}
+\titleformat*{\subsection}{\normalsize\bfseries}
+\titleformat*{\subsubsection}{\normalsize\itshape}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\makeatletter
+\AtBeginDocument{\let\tutortitle\@title}% \maketitle clears \@title; keep a copy
+\makeatother
+\fancyhead[L]{\small\itshape\tutortitle}
+\fancyhead[R]{\small\thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+\numberwithin{equation}{section}

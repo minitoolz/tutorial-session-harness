@@ -1,0 +1,69 @@
+# Phrases flagged by `uv run tutor review`.
+# Keep this shipped list SMALL: only expressions that read badly for *every* reader.
+# Reader-specific confusions go in skills.local/clear-writing/phrases.yaml (gitignored),
+# same format. Patterns are case-insensitive Python regexes.
+
+phrases:
+  - pattern: "버그를\\s*밟"
+    lang: ko
+    why: "made-up idiom; Korean developers don't say this"
+    suggest: "버그를 만났다 / 버그가 있었다"
+  - pattern: "을\\s*가지(고|는|며)\\s*있"
+    lang: ko
+    why: "translationese of 'has/have'"
+    suggest: "~이 있다 / ~한다"
+  - pattern: "되어지"
+    lang: ko
+    why: "double passive"
+    suggest: "된다 / 했다"
+  - pattern: "에\\s*대한\\s+\\S+에\\s*대한"
+    lang: ko
+    why: "stacked '에 대한'"
+    suggest: "restructure the sentence"
+  - pattern: "\\bdelve\\b"
+    lang: en
+    why: "filler verb typical of generated text"
+    suggest: "look at / explain"
+  - pattern: "\\b(tapestry|testament to|in the realm of)\\b"
+    lang: en
+    why: "ornamental filler"
+    suggest: "say the plain thing"
+
+hedges:
+  - pattern: "may not (apply|generalize|hold|be representative)"
+    why: "defensive disclaimer"
+    suggest: "delete, or state the specific condition and its effect"
+  - pattern: "results (may|might|can) vary"
+    why: "defensive disclaimer"
+    suggest: "delete"
+  - pattern: "(it is|it's) (important|worth) (to note|noting)"
+    why: "filler lead-in"
+    suggest: "state the point directly"
+  - pattern: "\\bplease (note|consult|refer to)\\b"
+    why: "filler / deflection"
+    suggest: "delete, or cite the exact section"
+  - pattern: "this is (a|an) (simplification|oversimplification)"
+    why: "self-protective"
+    suggest: "say what is simplified and when it matters, or delete"
+  - pattern: "(your|the) (mileage|environment|setup) may"
+    why: "defensive disclaimer"
+    suggest: "delete"
+  - pattern: "환경에\\s*따라\\s*(결과가\\s*)?(다를|달라질)\\s*수"
+    lang: ko
+    why: "defensive disclaimer"
+    suggest: "삭제, 또는 구체적인 조건과 영향을 쓰기"
+  - pattern: "참고로"
+    lang: ko
+    why: "filler lead-in; often signals a hedge"
+    suggest: "핵심만 쓰기"
+  - pattern: "주의할\\s*(필요가|점은)"
+    lang: ko
+    why: "filler lead-in"
+    suggest: "주의할 내용을 바로 쓰기"
+  - pattern: "일반화(하기는|하기|할 수는)\\s*(어렵|없)"
+    lang: ko
+    why: "defensive disclaimer"
+    suggest: "삭제, 또는 어떤 조건에서 달라지는지 구체적으로"
+
+# Tokens that look like opaque index labels but are standard names.
+label_allowlist: [L0, L1, L2, F1, R2, H1, H2, H3, H4, H5, H6, T4, L4, A10, K80, P4, C4, S3, EC2, ISO27001, SHA2, MD5, IPv4, IPv6, UTF8, X11, Q4, D3]
