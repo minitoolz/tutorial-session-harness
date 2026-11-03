@@ -39,7 +39,9 @@ def cmd_start(root, args) -> int:
     if not s.exists:
         print("!! ONBOARDING REQUIRED: SETTINGS.md does not exist.")
         print("   Follow skills/onboarding/SKILL.md: interview the user, write SETTINGS.md")
-        print("   (based on SETTINGS.example.md), then run `uv run tutor start` again.\n")
+        print("   (based on SETTINGS.example.md), then run `uv run tutor start` again.")
+        print("   If you have a tool that asks the user questions (e.g. AskUserQuestion),")
+        print("   use it for the background survey.\n")
         print("--- SETTINGS.example.md (template, NOT the user's settings) ---")
         example = root / settings_mod.EXAMPLE_FILE
         print(example.read_text(encoding="utf-8") if example.is_file() else "(missing)")
@@ -51,6 +53,8 @@ def cmd_start(root, args) -> int:
         print("!! ONBOARDING REQUIRED: audience fields missing or TODO: "
               + ", ".join(s.missing_audience()))
         print("   Follow skills/onboarding/SKILL.md, update SETTINGS.md, then run `uv run tutor start`.")
+        print("   If you have a tool that asks the user questions (e.g. AskUserQuestion),")
+        print("   use it for the background survey.")
         return 2
     settings_mod.write_stamp(root, s)
     topics = topic_mod.list_topics(root)

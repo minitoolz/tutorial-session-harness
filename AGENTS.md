@@ -15,6 +15,8 @@ uv run tutor start
   language, explanation preferences and PDF style. SETTINGS.md overrides any default in
   this file or in `skills/`.
 - If it prints `ONBOARDING REQUIRED`, stop and run `skills/onboarding/SKILL.md` first.
+  If your agent has a tool that asks the user questions (a question or survey tool, e.g.
+  `AskUserQuestion` in Claude Code), use it to ask about the user's background.
 - `new`, `lint`, `review` and `build` refuse to run until `start` has been run against the
   current SETTINGS.md. If SETTINGS.md changes, run `start` again.
 - `SETTINGS.md` is the user's file and is gitignored. `SETTINGS.example.md` is only a template.
@@ -24,7 +26,7 @@ uv run tutor start
 | Skill | Use when |
 |---|---|
 | `skills/start-session/SKILL.md` | beginning of every session |
-| `skills/onboarding/SKILL.md` | SETTINGS.md missing or incomplete, or the user wants to update their background |
+| `skills/onboarding/SKILL.md` | SETTINGS.md missing or incomplete, or the user wants to update their background (survey via the question tool if available) |
 | `skills/new-topic/SKILL.md` | the user wants to learn a new topic |
 | `skills/learn-more/SKILL.md` | a follow-up question, "explain X more", or adding a section |
 | `skills/clear-writing/SKILL.md` | **any time you write tutorial prose** (mandatory rules) |
