@@ -113,6 +113,8 @@ def _opaque_labels(page: str, text: str, allow: set[str]) -> list[Issue]:
 def _structure(page: str, text: str, limits: dict) -> list[Issue]:
     issues = []
     for start, par in mdscan.paragraphs(text):
+        if HTML_BLOCK_RE.match(par.lstrip()):
+            continue  # table cells and captions are not running prose
         clean = mdscan.strip_inline(par)
         sents = _sentences(clean)
         if len(sents) > limits["max_paragraph_sentences"]:

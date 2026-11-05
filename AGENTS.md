@@ -63,6 +63,9 @@ topics/{topic-name}/          kebab-case name
   3. [Appendix: numerical stability](appendix-stability.md)
   ```
   The PDF renders `abstract.md`, `intro.md`, the listed pages in list order, then `glossary.md`.
+  To put a page **before** the intro (e.g. a results-at-a-glance table), list `intro.md` in
+  `index.md` too: its position there sets where the intro renders. Give such a front page an
+  unnumbered heading (`# Results at a Glance {-}`) so the intro stays Section 1.
   `index.md` itself is not printed. You own it: update it in the same turn whenever you add,
   remove, rename or reorder a section page. `uv run tutor order <topic>` shows the resulting order.
 - **Section pages:** one top-level topic per page, starting with a `#` heading that matches its

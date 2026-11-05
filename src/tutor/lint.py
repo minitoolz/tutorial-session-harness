@@ -8,7 +8,7 @@ from pathlib import Path
 
 from . import mdscan
 from . import terms as terms_mod
-from .topic import GLOSSARY, IMG_EXTS, INDEX, REQUIRED_PAGES, TOPIC_NAME_RE, Topic
+from .topic import GLOSSARY, IMG_EXTS, INDEX, INTRO, REQUIRED_PAGES, TOPIC_NAME_RE, Topic
 
 MD_IMG_RE = re.compile(r"!\[[^\]]*\]\(\s*<?([^)\s>]+)")
 HTML_SRC_RE = re.compile(r"""\bsrc\s*=\s*["']([^"']+)["']""")
@@ -135,9 +135,10 @@ def _index(topic: Topic, pages: list[str]) -> list[Issue]:
             issues.append(Issue("error", INDEX, line, f"'{target}' is listed twice"))
             continue
         seen.add(target)
-        if target in REQUIRED_PAGES:
+        if target in REQUIRED_PAGES and target != INTRO:
             issues.append(Issue("error", INDEX, line,
-                                f"'{target}' has a fixed place in the PDF; list only section pages"))
+                                f"'{target}' has a fixed place in the PDF; list only section pages "
+                                "(intro.md may be listed to place pages before it)"))
         elif "/" in target or not target.endswith(".md"):
             issues.append(Issue("error", INDEX, line,
                                 f"'{target}' must be a .md page in the topic folder (no subfolders)"))

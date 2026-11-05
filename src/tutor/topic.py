@@ -89,9 +89,15 @@ class Topic:
     def order(self) -> list[str]:
         """Render order: abstract, intro, the sections from index.md, glossary.
 
+        If index.md lists intro.md, its position there sets where the intro renders, so pages
+        listed before it (e.g. a results-at-a-glance table) come between abstract and intro.
         index.md itself is the table of contents and is not rendered."""
         fixed = set(REQUIRED_PAGES)
-        return [ABSTRACT, INTRO] + [p for p in self.sections() if p not in fixed] + [GLOSSARY]
+        secs = self.sections()
+        body = [p for p in secs if p not in fixed or p == INTRO]
+        if INTRO not in body:
+            body = [INTRO] + body
+        return [ABSTRACT] + body + [GLOSSARY]
 
 
 def get(root: Path, name: str) -> Topic:

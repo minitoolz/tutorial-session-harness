@@ -171,16 +171,31 @@ def test_lint_image_naming_and_references(topic, capsys):
     assert "definition-ok.png" not in o
 
 
+def test_intro_can_be_placed_after_a_front_page(topic, capsys):
+    (topic / "summary.md").write_text("# Summary {-}\n\nAll results.\n", encoding="utf-8")
+    (topic / "index.md").write_text(
+        "# Contents\n\n1. [Summary](summary.md)\n2. [Introduction](intro.md)\n3. [Definition](definition.md)\n",
+        encoding="utf-8",
+    )
+    assert main(["lint", "demo"]) == 0
+    assert topic_order(topic) == ["abstract.md", "summary.md", "intro.md", "definition.md", "glossary.md"]
+
+
+def topic_order(topic):
+    from tutor.topic import Topic
+    return Topic(topic.parent.parent, topic.name).order()
+
+
 def test_lint_index_must_match_pages(topic, capsys):
     (topic / "extra.md").write_text("# Extra\n")
     with (topic / "index.md").open("a") as f:
-        f.write("2. [Gone](gone.md)\n3. [Again](definition.md)\n4. [Intro](intro.md)\n")
+        f.write("2. [Gone](gone.md)\n3. [Again](definition.md)\n4. [Glossary](glossary.md)\n")
     assert main(["lint", "demo"]) == 1
     o = out(capsys)
     assert "extra.md  page is not listed in index.md" in o
     assert "'gone.md' does not exist" in o
     assert "'definition.md' is listed twice" in o
-    assert "'intro.md' has a fixed place" in o
+    assert "'glossary.md' has a fixed place" in o
 
 
 def test_lint_unbalanced_math(topic, capsys):
@@ -276,6 +291,13 @@ def test_review_low_cohesion_skips_captions_and_glossary(topic, capsys):
     )
     main(["review", "demo"])
     assert "[low-cohesion]" not in out(capsys)
+
+
+def test_review_skips_html_tables_for_length(topic, capsys):
+    cells = "".join(f"<td>cell number {i}</td>" for i in range(40))
+    (topic / "definition.md").write_text(f"# D\n\n<table>\n<tr>{cells}</tr>\n</table>\n", encoding="utf-8")
+    main(["review", "demo", "definition.md"])
+    assert "[long-sentence]" not in out(capsys)
 
 
 def test_review_low_cohesion_can_be_disabled(ready, capsys):
