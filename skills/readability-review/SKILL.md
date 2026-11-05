@@ -21,7 +21,11 @@ when-to-use: Before you finish any turn in which you wrote or changed tutorial p
    - `[term]` (from `tutor lint`): replace the form with the one `terms.yaml` names.
    If a flag is a false positive (e.g. "L1 norm"), leave the text alone. If the false positive keeps
    coming back, add the token to `label_allowlist` in `skills.local/clear-writing/phrases.yaml`.
-3. Then reread your new text **as the reader in SETTINGS.md** and check what the tool can't:
+3. Run `uv run tutor review <topic> <page> --agreement` for each page you changed. For every
+   `subject → complement` pair it lists, check by meaning that the subject can really BE the
+   complement ("판정 → 거리" fails: a decision is based on a distance). Rewrite the ones that
+   fail (clear-writing §2, "Subject and predicate must agree").
+4. Then reread your new text **as the reader in SETTINGS.md** and check what the tool can't:
    - Would this person know every word? (Check `audience.field` and `weak_in`.)
    - Can each sentence be understood from the few before it?
    - Can the reader tell what kind of sentence comes next (a result, a contrast, an example)?
@@ -31,5 +35,7 @@ when-to-use: Before you finish any turn in which you wrote or changed tutorial p
    - Did you introduce a technical term? Is it in `terms.yaml` with the forms to avoid, and is
      it written in that one form everywhere (clear-writing §8)?
    - In ko/ja/zh: does it read like a native author wrote it, or like a translation?
-4. Run `uv run tutor lint <topic>`. It must report 0 errors. Resolve its glossary warnings (a
+   - Does every predicate fit its subject, including verbs and adjectives the agreement list
+     doesn't show ("determinant가 쉽다" → "determinant 계산이 쉽다")?
+5. Run `uv run tutor lint <topic>`. It must report 0 errors. Resolve its glossary warnings (a
    defined term with no entry, or an entry that isn't used anywhere) by editing `glossary.md`.

@@ -169,6 +169,8 @@ Fine-tuning
 - One idea per sentence and short paragraphs. Define terms before using them, and keep dependency chains short.
 - Link each sentence to the one before with a connective (so, but, for example, 그래서, 반면) or a
   reference back. If no connective fits, the sentences aren't cohesive: restructure, don't pad.
+- Make each predicate fit its subject by meaning: "판정은 거리에 기반한다", not "판정은 거리다".
+  `tutor review <topic> --agreement` lists the copula sentences to check.
 - Name compared things by what they are (`E-conv`, `E-transformer`), never `E1/E2/E3`.
 - No defensive hedging or self-protective disclaimers.
 - Natural phrasing in the target language: no translationese and no made-up idioms.
@@ -188,6 +190,7 @@ Fine-tuning
 | `uv run tutor terms` | check every topic against `terms.yaml` (one form per term) |
 | `uv run tutor lint <topic>` | structural rules (must pass, exit 1 on errors) |
 | `uv run tutor review <topic> [page] [--strict]` | readability warnings as `file:line` |
+| `uv run tutor review <topic> [page] --agreement` | list copula sentences (subject → complement) to check by meaning |
 | `uv run tutor build <topic> [--style S] [--html]` | PDF (or HTML preview) → `topics/<topic>/build/` |
 | `uv run tutor settings` | validate SETTINGS.md: style, fonts, xelatex |
 

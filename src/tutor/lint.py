@@ -19,7 +19,7 @@ BARE_ENV_RE = re.compile(r"^\s*\\begin\{(equation|align|gather|multline|flalign|
 
 @dataclass
 class Issue:
-    level: str   # error | warning
+    level: str   # error | warning | info
     file: str
     line: int
     msg: str

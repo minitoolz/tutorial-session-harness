@@ -13,7 +13,7 @@ from . import settings as settings_mod
 from . import terms as terms_mod
 from . import topic as topic_mod
 from .lint import lint, term_issues
-from .review import review
+from .review import agreement_pairs, review
 from .settings import TutorError
 
 RULES_SUMMARY = """\
@@ -107,6 +107,13 @@ def cmd_lint(root, args) -> int:
 def cmd_review(root, args) -> int:
     s = settings_mod.gate(root)
     t = topic_mod.get(root, args.topic)
+    if args.agreement:
+        pairs = agreement_pairs(t, only_page=args.page)
+        for i in pairs:
+            print(f"{i.file}:{i.line}  {i.msg}")
+        print(f"== agreement {t.name}: {len(pairs)} copula sentence(s). Check each by meaning: "
+              "can the subject really BE the complement? (skills/clear-writing §2)")
+        return 0
     issues = review(t, s, root, only_page=args.page)
     _print_issues(issues, f"review {t.name}")
     return 1 if (issues and args.strict) else 0
@@ -214,6 +221,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("topic")
     p.add_argument("page", nargs="?", help="only this page, e.g. softmax.md")
     p.add_argument("--strict", action="store_true", help="exit 1 if anything is flagged")
+    p.add_argument("--agreement", action="store_true",
+                   help="list copula sentences ('A is B') to check subject-predicate agreement by meaning")
 
     p = sub.add_parser("order", help="show the render order (set by index.md)")
     p.add_argument("topic")

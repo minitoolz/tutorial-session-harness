@@ -64,6 +64,26 @@ can predict it instead of working it out.
   sentences in a row have none of these links. The marker lists are `connectives:` in
   `phrases.yaml` (extend them in `skills.local/clear-writing/phrases.yaml`).
 
+### Subject and predicate must agree
+
+Check that the predicate fits its subject by meaning, not only by grammar. The commonest slip is
+a copula sentence ("A is B", "A는 B다") whose subject cannot actually *be* the complement:
+
+| Wrong | Why | Right |
+|---|---|---|
+| 판정은 Gaussian 거리이므로 | a decision is not a distance | 판정은 Gaussian 거리에 기반하므로 |
+| 이 loss는 두 힘의 균형이다 | a loss is not a balance | 이 loss에는 서로 반대로 작용하는 두 항이 있다 |
+| 학습은 feature 추출뿐이다 | training is not an extraction | 학습 단계에서 하는 일은 feature 추출뿐이다 |
+| The decision is a distance | same | The decision is based on a distance |
+
+The same holds for verbs and adjectives: "determinant가 쉽다" says the determinant is easy, when
+the computation is (write "determinant 계산이 쉽다"). Name the operation, the property or the
+relation ("is based on", "consists of", "is measured by") that the subject really has.
+
+`uv run tutor review <topic> [page] --agreement` lists every copula sentence as
+`subject → complement`. Read each pair and ask: can this subject really BE this complement?
+The list is an aid, not a verdict: it cannot judge meaning, and it misses non-copula slips.
+
 ## 3. Short dependency chains
 
 - **Define before use.** Every term and symbol is explained at or before its first appearance in

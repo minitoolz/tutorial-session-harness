@@ -198,6 +198,54 @@ def _undefined_terms(topic: Topic, order: list[str]) -> list[Issue]:
     return issues
 
 
+# Subject-predicate agreement audit. Whether "A는 B다" makes sense (a decision is not a distance)
+# is a question of meaning that no regex can answer, so this only lists the copula sentences
+# ("A is B") for the writer to check one by one; it raises no warnings.
+KO_SUBJ_RE = re.compile(r"(?:^|\s)([^\s,()]+?)(?:은|는)(?=\s)")
+KO_SUBJ_SKIP_RE = re.compile(r"(에서|에게|에도|에|으로|로|까지|부터|보다|처럼)$")
+KO_COPULA_RE = re.compile(
+    r"([^\s,()]+?(?:이다|이므로|이고|이며|이지만|인데|였다|이었다|이라서|이라))(?=[\s,.]|$)"
+    r"|([A-Za-z0-9%)\]]+(?:다|였다|므로|이므로|고|며|지만|인데))(?=[\s,.]|$)"
+)
+EN_COPULA_RE = re.compile(
+    r"\b([A-Za-z][\w-]*)\s+(?:is|are|was|were)\s+(?:not\s+)?(?:(?:an?|the)\s+)?([A-Za-z][\w-]*)", re.I
+)
+
+
+def agreement_pairs(topic: Topic, only_page: str | None = None) -> list[Issue]:
+    """List each copula sentence as 'subject → complement' for a by-meaning check."""
+    order = topic.order() or topic.pages()
+    pages = [only_page] if only_page else [p for p in order if p != GLOSSARY]
+    out: list[Issue] = []
+    for page in pages:
+        f = topic.path / page
+        if not f.is_file():
+            continue
+        for start, par in mdscan.paragraphs(f.read_text(encoding="utf-8")):
+            if HTML_BLOCK_RE.match(par.lstrip()):
+                continue
+            for s in _sentences(mdscan.strip_inline(par)):
+                pair = None
+                if _is_cjk(s):
+                    for ms in KO_SUBJ_RE.finditer(s):
+                        subj = ms.group(1).strip("*")
+                        if KO_SUBJ_SKIP_RE.search(subj) or (len(subj) == 1 and CJK_RE.match(subj)):
+                            continue
+                        mc = KO_COPULA_RE.search(s, ms.end())
+                        if mc:
+                            pair = (subj, mc.group(1) or mc.group(2))
+                        break
+                else:
+                    me = EN_COPULA_RE.search(s)
+                    if me:
+                        pair = (me.group(1), me.group(2))
+                if pair:
+                    preview = s if len(s) <= 90 else s[:87] + "..."
+                    out.append(Issue("info", page, start,
+                                     f"[agreement] {pair[0]} → {pair[1]}: \"{preview}\""))
+    return out
+
+
 def review(topic: Topic, settings: Settings, root: Path, only_page: str | None = None) -> list[Issue]:
     rules = load_rules(root)
     limits = settings.review_limits()

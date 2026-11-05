@@ -288,6 +288,20 @@ def test_review_low_cohesion_can_be_disabled(ready, capsys):
     assert "[low-cohesion]" not in out(capsys)
 
 
+def test_review_agreement_lists_copula_pairs(topic, capsys):
+    (topic / "definition.md").write_text(
+        "# D\n\n게다가 판정은 여전히 Gaussian 거리이므로, 경계를 직접 만들지는 않는다. "
+        "Wall Plugs에서는 물체가 겹친다. The decision is a distance.\n",
+        encoding="utf-8",
+    )
+    assert main(["review", "demo", "definition.md", "--agreement"]) == 0
+    o = out(capsys)
+    assert "[agreement] 판정 → 거리이므로" in o
+    assert "[agreement] decision → distance" in o
+    assert "Plugs에서" not in o  # locative "~에서는" is not a subject
+    assert "[long-sentence]" not in o  # the audit replaces the normal review output
+
+
 def test_review_undefined_term(topic, capsys):
     (topic / "intro.md").write_text("# Intro\n\nWe use the logit a lot.\n", encoding="utf-8")
     main(["review", "demo"])
