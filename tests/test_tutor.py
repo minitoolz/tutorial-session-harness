@@ -454,6 +454,27 @@ def _add_mermaid_page(topic):
         f.write("2. [Flow](flow.md)\n")
 
 
+@pytest.mark.parametrize("version, pdffit, warns", [
+    ((11, 4, 2), True, False),   # needs --pdfFit
+    ((12, 2, 0), False, False),  # fits by default and rejects --pdfFit
+    ((13, 0, 0), False, True),   # untested major
+    ((9, 1, 0), True, True),     # untested major
+    (None, True, True),          # version unreadable
+])
+def test_mmdc_version_decides_pdffit_and_warning(monkeypatch, version, pdffit, warns):
+    monkeypatch.setattr(build_mod, "mmdc_version", lambda _bin: version)
+    got_pdffit, warning = build_mod.mmdc_check("mmdc")
+    assert got_pdffit is pdffit
+    assert (warning is not None) is warns
+
+
+def test_settings_reports_untested_mmdc(ready, capsys, monkeypatch):
+    monkeypatch.setattr(build_mod, "mmdc_bin", lambda: "/usr/bin/mmdc")
+    monkeypatch.setattr(build_mod, "mmdc_version", lambda _bin: (13, 0, 0))
+    main(["settings"])
+    assert "mermaid-cli 13.0.0 is outside the versions" in out(capsys)
+
+
 def test_build_without_mmdc_explains_install(topic, capsys, monkeypatch):
     _add_mermaid_page(topic)
     monkeypatch.setattr(build_mod, "mmdc_bin", lambda: None)

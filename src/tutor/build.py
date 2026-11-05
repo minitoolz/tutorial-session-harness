@@ -53,12 +53,50 @@ MMDC_INSTALL = (
 )
 
 
+# mermaid-cli majors the harness is tested with. 12 dropped `--pdfFit` because fitting the PDF
+# to the diagram became the default; older majors need the flag to avoid a full-page PDF.
+MMDC_TESTED_MAJORS = (11, 12)
+MMDC_PDFFIT_UNTIL_MAJOR = 11
+
+
 def mmdc_bin() -> str | None:
     """mermaid-cli: $TUTOR_MMDC if set, else `mmdc` on PATH."""
     env = os.environ.get("TUTOR_MMDC")
     if env:
         return env if Path(env).is_file() else None
     return shutil.which("mmdc")
+
+
+_mmdc_versions: dict[str, tuple[int, int, int] | None] = {}
+
+
+def mmdc_version(mmdc: str) -> tuple[int, int, int] | None:
+    """(major, minor, patch) from `mmdc --version`, or None if it can't be read."""
+    if mmdc not in _mmdc_versions:
+        try:
+            proc = subprocess.run([mmdc, "--version"], capture_output=True, text=True, timeout=60)
+            m = re.search(r"(\d+)\.(\d+)\.(\d+)", proc.stdout + proc.stderr)
+            _mmdc_versions[mmdc] = tuple(int(g) for g in m.groups()) if m else None  # type: ignore[assignment]
+        except (OSError, subprocess.SubprocessError):
+            _mmdc_versions[mmdc] = None
+    return _mmdc_versions[mmdc]
+
+
+def mmdc_check(mmdc: str) -> tuple[bool, str | None]:
+    """Whether to pass --pdfFit, and a warning if the version is unknown or untested."""
+    ver = mmdc_version(mmdc)
+    if ver is None:
+        return True, (f"could not read the mermaid-cli version from `{mmdc} --version`; assuming "
+                      f"{MMDC_PDFFIT_UNTIL_MAJOR}.x (passes --pdfFit). If PDF diagrams fail, install "
+                      f"a tested version: `npm install -g @mermaid-js/mermaid-cli@{MMDC_TESTED_MAJORS[-1]}`.")
+    pdffit = ver[0] <= MMDC_PDFFIT_UNTIL_MAJOR
+    lo, hi = MMDC_TESTED_MAJORS[0], MMDC_TESTED_MAJORS[-1]
+    if not lo <= ver[0] <= hi:
+        v = ".".join(map(str, ver))
+        return pdffit, (f"mermaid-cli {v} is outside the versions this harness is tested with "
+                        f"({lo}.x–{hi}.x); diagrams may fail to render or be sized differently. "
+                        f"Tested: `npm install -g @mermaid-js/mermaid-cli@{hi}`.")
+    return pdffit, None
 
 
 def uses_mermaid(topic: Topic, pages: list[str]) -> bool:
@@ -136,7 +174,11 @@ def build(topic: Topic, settings: Settings, style: str | None = None, html: bool
             raise TutorError("This topic has mermaid diagrams, but mermaid-cli (mmdc) was not found. "
                              + MMDC_INSTALL)
         (topic.build_dir / "mermaid").mkdir(exist_ok=True)
+        pdffit, warning = mmdc_check(mmdc)
+        if warning:
+            print(f"warning: {warning}")
         env["TUTOR_MMDC"] = mmdc
+        env["TUTOR_MMDC_PDFFIT"] = "1" if pdffit else "0"
         env["TUTOR_MERMAID_DIR"] = "build/mermaid"  # relative to the topic folder (pandoc's cwd)
 
     proc = subprocess.run(cmd, cwd=topic.path, env=env, capture_output=True, text=True)

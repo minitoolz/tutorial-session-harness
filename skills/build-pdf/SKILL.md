@@ -29,4 +29,5 @@ when-to-use: The user asks for a PDF, a preview, or a different look.
 | `[html2latex] WARNING: <iframe> ...` | that HTML can't go in a PDF; use an image or a link instead |
 | svg image fails | install `librsvg` (`rsvg-convert`) or export the figure as pdf/png |
 | `mermaid-cli (mmdc) was not found` | ask the user to install it: `npm install -g @mermaid-js/mermaid-cli` (needs Node.js) |
+| `warning: mermaid-cli X is outside the versions this harness is tested with` (or `could not read the mermaid-cli version`) | the build still tries; if diagrams fail or look wrong, ask the user to install a tested version: `npm install -g @mermaid-js/mermaid-cli@12` |
 | `mermaid diagram failed to render` | the block has a mermaid syntax error; the message shows the block |

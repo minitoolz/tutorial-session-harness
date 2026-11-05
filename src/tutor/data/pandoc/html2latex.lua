@@ -16,7 +16,8 @@ It makes `$$ ... $$` the only display-math syntax a page needs:
 
 It renders mermaid diagrams (```mermaid or ```{.mermaid #fig:id caption="..." width="80%"})
 to an image with mermaid-cli: PDF for LaTeX, SVG for HTML. `tutor build` passes the
-mmdc path in TUTOR_MMDC and the cache folder in TUTOR_MERMAID_DIR.
+mmdc path in TUTOR_MMDC, whether to pass --pdfFit in TUTOR_MMDC_PDFFIT (from the mmdc
+version) and the cache folder in TUTOR_MERMAID_DIR.
 
 It renders every `>` blockquote as a side note: a `tutornote` box in LaTeX (defined in each
 style) and a `<div class="note">` in the HTML preview.
@@ -300,6 +301,9 @@ end
 -- Mermaid diagrams
 ------------------------------------------------------------------------
 local MMDC = os.getenv("TUTOR_MMDC") or ""
+-- `tutor build` sets this from `mmdc --version`: mermaid-cli 12 fits PDFs by default and
+-- rejects --pdfFit, older versions need it.
+local MMDC_PDFFIT = (os.getenv("TUTOR_MMDC_PDFFIT") or "1") == "1"
 local MERMAID_DIR = os.getenv("TUTOR_MERMAID_DIR") or "build/mermaid"
 
 local function file_exists(path)
@@ -323,7 +327,7 @@ local function mermaid(cb)
     fh:close()
     local args = { "-i", base .. ".mmd", "-o", out, "-q",
                    "-b", is_html and "transparent" or "white" }
-    if ext == "pdf" then args[#args + 1] = "--pdfFit" end
+    if ext == "pdf" and MMDC_PDFFIT then args[#args + 1] = "--pdfFit" end
     local ok, err = pcall(pandoc.pipe, MMDC, args, "")
     if not ok or not file_exists(out) then
       error("mermaid diagram failed to render (check its syntax):\n" .. cb.text ..

@@ -190,9 +190,14 @@ def cmd_settings(root, args) -> int:
     lang = str(s.data.get("language") or s.data.get("lang") or "")
     if lang[:2] in build_mod.CJK_LANGS and not s.data.get("CJKmainfont"):
         problems.append(f"language '{lang}' needs CJKmainfont")
-    if not build_mod.mmdc_bin():
+    mmdc = build_mod.mmdc_bin()
+    if not mmdc:
         notes.append("mermaid-cli (mmdc) not found; needed only for pages with mermaid diagrams. "
                      + build_mod.MMDC_INSTALL)
+    else:
+        _pdffit, mmdc_warning = build_mod.mmdc_check(mmdc)
+        if mmdc_warning:
+            notes.append(mmdc_warning)
     for n in notes:
         print(f"note: {n}")
     if problems:
