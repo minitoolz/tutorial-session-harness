@@ -10,8 +10,9 @@ import sys
 from . import build as build_mod
 from . import migrate as migrate_mod
 from . import settings as settings_mod
+from . import terms as terms_mod
 from . import topic as topic_mod
-from .lint import lint
+from .lint import lint, term_issues
 from .review import review
 from .settings import TutorError
 
@@ -21,6 +22,8 @@ RULES_SUMMARY = """\
   topic.yaml (title/author/date), imgs/{pagename}-{short-name}.{ext}, codes/.
 - index.md is the table of contents: a numbered list linking every section page in reading order.
   It sets the PDF order (abstract, intro, sections, glossary). Keep it current.
+- Technical terms: one written form per term, in one language, in every page of every topic.
+  The forms are in terms.yaml (printed above); add each new term there when you introduce it.
 - When a section page changes, reconcile index.md, intro.md, abstract.md and glossary.md in the same turn.
 - Write by skills/clear-writing/SKILL.md; end each turn with `uv run tutor review <topic>`
   (fix the flags) and `uv run tutor lint <topic>` (must pass).
@@ -67,6 +70,14 @@ def cmd_start(root, args) -> int:
     for name in topics:
         t = topic_mod.Topic(root, name)
         print(f"- {name}: {t.meta().get('title', '')!s}  [sections: {', '.join(t.sections()) or '(none)'}]")
+    print(f"\n--- {terms_mod.TERMS_FILE} (write each term only in this form; all topics) ---")
+    terms = terms_mod.load(root)
+    if not terms:
+        print("(none yet: add `term: [forms to avoid]` lines as terms come up)")
+    for canon, avoid in terms.items():
+        print(f"{canon}" + (f"   (not: {', '.join(avoid)})" if avoid else ""))
+    for msg in terms_mod.problems(terms):
+        print(f"!! {msg}")
     print("\n--- rules ---")
     print(RULES_SUMMARY)
     print("\nOK: settings acknowledged for this session.")
@@ -116,6 +127,23 @@ def cmd_migrate(root, args) -> int:
         print(line)
     print(f"Next: check index.md titles, then run `uv run tutor lint {t.name}`.")
     return 0
+
+
+def cmd_terms(root, args) -> int:
+    settings_mod.gate(root)
+    if not terms_mod.load(root):
+        print(f"No {terms_mod.TERMS_FILE} yet. Format: `layer: [neural network layer, 층, couche]`.")
+        return 0
+    errors = 0
+    for name in topic_mod.list_topics(root):
+        t = topic_mod.Topic(root, name)
+        issues = term_issues(t, t.pages())
+        if issues:
+            e, _ = _print_issues(issues, f"terms {name}")
+            errors += e
+    if not errors:
+        print(f"OK: every topic uses the forms in {terms_mod.TERMS_FILE}.")
+    return 1 if errors else 0
 
 
 def cmd_build(root, args) -> int:
@@ -193,6 +221,8 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("migrate", help="split an old contents.md into section pages + index.md")
     p.add_argument("topic")
 
+    sub.add_parser("terms", help="check every topic against terms.yaml (one form per term)")
+
     p = sub.add_parser("build", help="render the topic to PDF (or --html preview)")
     p.add_argument("topic")
     p.add_argument("--style", help=f"override SETTINGS style ({', '.join(build_mod.styles())})")
@@ -203,7 +233,7 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
     handlers = {
         "start": cmd_start, "new": cmd_new, "lint": cmd_lint, "review": cmd_review,
-        "order": cmd_order, "migrate": cmd_migrate, "build": cmd_build, "settings": cmd_settings,
+        "order": cmd_order, "migrate": cmd_migrate, "terms": cmd_terms, "build": cmd_build, "settings": cmd_settings,
     }
     try:
         root = settings_mod.find_root()

@@ -61,6 +61,10 @@ offer CV-specific options in round 2.
 - Which language should the tutorial be written in? (→ `language`) Options: English, Korean,
   and the language the user is writing in. For ko/ja/zh, also choose a `CJKmainfont` from
   `fc-list :lang=ko family` (use the matching `:lang=`), and offer the installed fonts as options.
+- If the language isn't English: how should technical terms be written? (→ "Technical terms")
+  Options e.g.: keep the English term (layer), use the established translation in the writing
+  language, transliterate. Whatever they choose, each term then gets one form everywhere
+  (`skills/clear-writing` §8).
 - Which PDF style? (→ `style`) `article` (clean, default), `paper` (academic look, running
   header), `notes` (sans-serif, relaxed). Ask about font size and paper size only if the user
   cares; otherwise keep the defaults.
@@ -83,6 +87,9 @@ During later sessions, when you learn something durable about the reader, ask fi
 note in your settings that you'd like X explained from scratch?" If they agree, update `audience`
 or "Things that confused me before" and re-run `uv run tutor start`. Examples of durable facts:
 they didn't know what a Jacobian is, or they prefer JAX.
+
+When the user corrects how a **technical term** is written, update `terms.yaml` (the form to
+write, plus the forms to avoid) and fix every topic `uv run tutor terms` reports.
 
 When the user says an **expression** confused them, also add it to
 `skills.local/clear-writing/phrases.yaml` (create it if needed; same format as

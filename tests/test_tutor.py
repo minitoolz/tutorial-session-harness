@@ -371,3 +371,39 @@ def test_build_renders_mermaid(topic, capsys):
     if build_mod.xelatex_available():
         assert main(["build", "demo"]) == 0
         assert len(list((topic / "build" / "mermaid").glob("*.pdf"))) == 2
+
+
+# ── terms: one written form per technical term ──────────────────────────────
+
+def test_lint_flags_avoided_term_forms(topic, capsys):
+    (topic.parent.parent / "terms.yaml").write_text(
+        "layer: [neural network layer, 층, 레이어, couche]\n注意力: [attention]\n", encoding="utf-8")
+    with (topic / "definition.md").open("a") as f:
+        f.write("\nEach neural network layers stack. 레이어는 계층의 일부다. Une couche. "
+                "Code `레이어` and math $층$ are fine. A layer is fine.\n")
+    assert main(["lint", "demo"]) == 1
+    o = out(capsys)
+    assert "[term] 'neural network layers': write 'layer'" in o
+    assert "[term] '레이어는': write 'layer'" in o
+    assert "[term] 'couche': write 'layer'" in o
+    assert "계층" not in o and "[term] '층'" not in o and "'attention'" not in o
+
+
+def test_terms_command_checks_every_topic_and_start_prints_them(topic, capsys):
+    root = topic.parent.parent
+    (root / "terms.yaml").write_text("logit: [로짓, raw score]\n", encoding="utf-8")
+    assert main(["start"]) == 0
+    assert "logit   (not: 로짓, raw score)" in out(capsys)
+    assert main(["new", "other"]) == 0
+    (root / "topics" / "other" / "intro.md").write_text("# Intro\n\n로짓을 본다.\n", encoding="utf-8")
+    capsys.readouterr()
+    assert main(["terms"]) == 1
+    o = out(capsys)
+    assert "terms demo" in o and "'raw score'" in o      # demo's definition.md
+    assert "terms other" in o and "'로짓을'" in o
+
+
+def test_terms_yaml_contradictions(topic, capsys):
+    (topic.parent.parent / "terms.yaml").write_text("layer: [층]\n층: [floor]\n", encoding="utf-8")
+    assert main(["lint", "demo"]) == 1
+    assert "'층' is both a term to write and a form to avoid" in out(capsys)

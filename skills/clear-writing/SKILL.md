@@ -122,10 +122,38 @@ When in doubt, delete it.
 - Don't invent idioms. "버그를 밟았다" isn't something Korean developers say. Write "버그를
   만났다" or "버그가 있었다".
 - Korean: avoid stacking "~의 ~의", "~에 대한 ~에 대한" and the constructions "~를 가지다" and
-  "~되어지다". Use technical terms the way Korean practitioners do. Keep the English term in
-  parentheses on first use when practitioners use both, e.g. 어텐션(attention).
+  "~되어지다".
+- Technical terms follow §8: one form each, used everywhere.
 
-## 8. Check yourself
+## 8. One written form per technical term
+
+A technical term is written in exactly one form, in one language, in every page of every topic:
+headings, prose, captions, `index.md` titles and the glossary. If one page says "layer", no page
+says "neural network layer", "Schicht", "층" or "レイヤー" for the same thing. Switching forms
+makes the reader wonder whether two different things are meant. This holds in every language.
+
+- **Choose the form once**, from the user's preference in SETTINGS.md ("Technical terms"):
+  usually the form practitioners in the reader's field write. If there is no preference and the
+  choice isn't obvious, ask the user.
+- **Record it in `terms.yaml`** (repo root, the user's file, shared by all topics) the moment you
+  introduce the term. List the forms you might drift into: translations, transliterations,
+  spelled-out or abbreviated forms, spacing and hyphenation variants.
+  ```yaml
+  layer: [neural network layer, 층, 레이어]
+  fine-tuning: [finetuning, fine tuning, 미세 조정]
+  ```
+  `tutor start` prints the list each session. `tutor lint` fails on any listed form, and
+  `tutor terms` checks every topic at once.
+- **Don't pair forms.** No "layer (층)" or "층(layer)" glosses, in the text or in the glossary.
+  If the reader needs a bridge to a form they know, define the term in plain words instead.
+- **Matching:** a listed form matches at the start of a word and covers its plurals, inflections
+  and attached particles. In scripts written without spaces (Chinese, Japanese, Thai) it matches
+  anywhere. Code, math and diagram source are not checked. If a form is too short and matches
+  too much, write it as a regex: `re:\bnet\b`.
+- **When the user changes a term**, update `terms.yaml`, run `uv run tutor terms`, and fix every
+  topic it reports, not only the one you're working on.
+
+## 9. Check yourself
 
 Before ending a turn, follow `skills/readability-review/SKILL.md`. See `examples.md` for
 before/after rewrites, and `phrases.yaml` for the phrases `tutor review` flags.

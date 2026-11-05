@@ -1,5 +1,6 @@
 # --- user artifacts (never committed) ---
 SETTINGS.md
+terms.yaml
 skills.local/
 topics/*
 !topics/.gitkeep

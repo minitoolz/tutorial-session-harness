@@ -103,13 +103,14 @@ Logit
 :   The raw score a model gives a class before softmax. It is not a probability.
     See \eqref{eq:softmax}.
 
-어텐션 (attention)
+Fine-tuning
 :   ...
 ```
 
 - Each entry is one or two plain sentences written for the reader in SETTINGS.md, with no
   circular definitions. Link to the equation or section where the term is explained.
-- For non-English topics, add the English term in parentheses when practitioners use both.
+- The headword is the term's one written form (§5, `terms.yaml`). Don't add a second form in
+  parentheses.
 - The glossary is a reference. It does **not** replace defining the term in the text at first use.
 - `tutor lint` warns when a term marked as defined in a page (`<dfn>` / **bold**) has no glossary
   entry, or a glossary entry isn't used in any page. It errors on duplicate entries.
@@ -171,6 +172,10 @@ Logit
 - Name compared things by what they are (`E-conv`, `E-transformer`), never `E1/E2/E3`.
 - No defensive hedging or self-protective disclaimers.
 - Natural phrasing in the target language: no translationese and no made-up idioms.
+- **One written form per technical term**, in one language, across every page of every topic.
+  Record each term's form and the forms to avoid in `terms.yaml` (repo root, the user's file);
+  `tutor lint` fails on an avoided form. Never pair forms like "layer (층)". Full rules:
+  `skills/clear-writing/SKILL.md` §8.
 
 ## 6. CLI reference
 
@@ -180,6 +185,7 @@ Logit
 | `uv run tutor new <name> [--title T]` | create `topics/<name>/` from the template |
 | `uv run tutor order <topic>` | show the render order (edit `index.md` to change it) |
 | `uv run tutor migrate <topic>` | split an old `contents.md` into section pages + `index.md` |
+| `uv run tutor terms` | check every topic against `terms.yaml` (one form per term) |
 | `uv run tutor lint <topic>` | structural rules (must pass, exit 1 on errors) |
 | `uv run tutor review <topic> [page] [--strict]` | readability warnings as `file:line` |
 | `uv run tutor build <topic> [--style S] [--html]` | PDF (or HTML preview) → `topics/<topic>/build/` |
@@ -187,7 +193,7 @@ Logit
 
 ## 7. Repository hygiene
 
-- Commit only harness files: `src/`, `skills/`, docs and tests. Never commit `SETTINGS.md`,
+- Commit only harness files: `src/`, `skills/`, docs and tests. Never commit `SETTINGS.md`, `terms.yaml`,
   `skills.local/`, `topics/*`, `.tutor/` or build output (all are gitignored).
 - Use real customer or personal data only when the user supplies it for their own tutorial. Never put it
   in shipped examples or tests.

@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from . import mdscan
+from . import terms as terms_mod
 from .topic import GLOSSARY, IMG_EXTS, INDEX, REQUIRED_PAGES, TOPIC_NAME_RE, Topic
 
 MD_IMG_RE = re.compile(r"!\[[^\]]*\]\(\s*<?([^)\s>]+)")
@@ -142,6 +143,21 @@ def _index(topic: Topic, pages: list[str]) -> list[Issue]:
     return issues
 
 
+def term_issues(topic: Topic, pages: list[str]) -> list[Issue]:
+    """Every technical term in one written form, as terms.yaml (shared by all topics) sets it."""
+    terms = terms_mod.load(topic.root)
+    if not terms:
+        return []
+    issues = [Issue("error", terms_mod.TERMS_FILE, 0, msg) for msg in terms_mod.problems(terms)]
+    compiled = terms_mod.compile_terms(terms)
+    for page in pages:
+        text = (topic.path / page).read_text(encoding="utf-8")
+        for h in terms_mod.check_text(text, compiled):
+            issues.append(Issue("error", page, h.line,
+                                f"[term] '{h.found}': write '{h.canonical}' ({terms_mod.TERMS_FILE})"))
+    return issues
+
+
 def lint(topic: Topic) -> list[Issue]:
     issues: list[Issue] = []
     p = topic.path
@@ -207,4 +223,5 @@ def lint(topic: Topic) -> list[Issue]:
             issues.append(Issue("warning", rel, 0, "image is not referenced by any page"))
 
     issues.extend(_glossary(topic, [pg for pg in pages if pg != INDEX]))
+    issues.extend(term_issues(topic, pages))
     return issues

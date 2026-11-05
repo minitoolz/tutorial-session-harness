@@ -18,6 +18,7 @@ when-to-use: Before you finish any turn in which you wrote or changed tutorial p
    - `[opaque-label]`: rename E1/E2/… after what each item is, everywhere (tables, figures, code).
    - `[hedge]`: delete it, unless it carries new, specific information (see clear-writing §6).
    - `[phrase]`: apply the suggestion.
+   - `[term]` (from `tutor lint`): replace the form with the one `terms.yaml` names.
    If a flag is a false positive (e.g. "L1 norm"), leave the text alone. If the false positive keeps
    coming back, add the token to `label_allowlist` in `skills.local/clear-writing/phrases.yaml`.
 3. Then reread your new text **as the reader in SETTINGS.md** and check what the tool can't:
@@ -27,6 +28,8 @@ when-to-use: Before you finish any turn in which you wrote or changed tutorial p
    - Does every new symbol have a plain-words definition next to its equation?
    - Is there a concrete example before each general statement?
    - Do any analogies come from a field the reader doesn't know?
+   - Did you introduce a technical term? Is it in `terms.yaml` with the forms to avoid, and is
+     it written in that one form everywhere (clear-writing §8)?
    - In ko/ja/zh: does it read like a native author wrote it, or like a translation?
 4. Run `uv run tutor lint <topic>`. It must report 0 errors. Resolve its glossary warnings (a
    defined term with no entry, or an entry that isn't used anywhere) by editing `glossary.md`.

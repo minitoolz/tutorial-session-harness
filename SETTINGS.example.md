@@ -49,6 +49,11 @@ review:
 - TODO: e.g. "Show the derivation step by step; don't skip algebra."
 - TODO: e.g. "Prefer PyTorch for code."
 
+## Technical terms
+<!-- How terms are written. Each term then gets ONE form, used in every topic (terms.yaml). -->
+- TODO: e.g. "Keep English technical terms as they are (layer, fine-tuning); translate everyday words."
+- TODO: e.g. "Use the established translation when one exists; otherwise the English term."
+
 ## Notation
 - TODO: e.g. "Vectors bold lowercase ($\mathbf{x}$), matrices bold uppercase."
 
