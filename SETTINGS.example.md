@@ -23,6 +23,7 @@ author: ""                 # default author for new topics
 # ── PDF typesetting (passed to pandoc / XeLaTeX) ────────────────────────────
 style: article             # article | paper | notes   (src/tutor/data/pandoc/styles/)
 fontsize: 11pt
+# codefontsize: 9pt        # code blocks only (default: same as the body)
 papersize: a4
 geometry: margin=2.5cm
 linestretch: 1.25
@@ -33,6 +34,7 @@ colorlinks: true
 # sansfont: "Helvetica Neue"
 # monofont: "Menlo"
 # CJKmainfont: "Apple SD Gothic Neo" # REQUIRED for ko/ja/zh, e.g. "Noto Serif CJK KR"
+# CJKoptions: [AutoFakeBold=2, AutoFakeSlant=0.15]  # for a CJK font with one weight (e.g. AppleMyungjo)
 
 # ── Readability limits used by `tutor review` (optional) ─────────────────────
 review:

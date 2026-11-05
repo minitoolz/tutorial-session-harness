@@ -23,7 +23,7 @@ AUDIENCE_REQUIRED = ("field", "background", "strong_in", "weak_in", "math_level"
 
 # Frontmatter keys passed straight through to pandoc as metadata/variables.
 PANDOC_KEYS = (
-    "lang", "mainfont", "sansfont", "monofont", "mathfont", "CJKmainfont",
+    "lang", "mainfont", "sansfont", "monofont", "mathfont", "CJKmainfont", "CJKoptions",
     "fontsize", "papersize", "geometry", "linestretch", "numbersections",
     "toc", "toc-depth", "colorlinks", "linkcolor", "urlcolor", "documentclass",
 )

@@ -67,6 +67,25 @@ def mmdc_bin() -> str | None:
     return shutil.which("mmdc")
 
 
+CODE_FONTSIZE_RE = re.compile(r"^\s*(\d+(?:\.\d+)?)\s*pt\s*$")
+
+
+def code_font_header(size: str) -> str:
+    """LaTeX that sets code blocks (highlighted and plain) to `size`, e.g. "9pt"."""
+    m = CODE_FONTSIZE_RE.match(str(size))
+    if not m:
+        raise TutorError(f"codefontsize '{size}' must be a point size such as 9pt")
+    pt = float(m.group(1))
+    font = f"\\fontsize{{{pt:g}pt}}{{{pt * 1.2:g}pt}}\\selectfont"
+    return (
+        "% codefontsize from SETTINGS.md\n"
+        "\\usepackage{fancyvrb}\n"
+        f"\\fvset{{fontsize={font}}}\n"            # highlighted blocks (Shaded/Highlighting)
+        "\\usepackage{etoolbox}\n"
+        f"\\AtBeginEnvironment{{verbatim}}{{{font}}}\n"  # blocks without a language
+    )
+
+
 _mmdc_versions: dict[str, tuple[int, int, int] | None] = {}
 
 
@@ -166,6 +185,11 @@ def build(topic: Topic, settings: Settings, style: str | None = None, html: bool
                 "Debian/Ubuntu: `apt install texlive-xetex texlive-latex-extra texlive-lang-cjk`)."
             )
         cmd += ["-H", str(data_path("pandoc", "styles", f"{style}.tex"))]
+        if settings.data.get("codefontsize"):
+            topic.build_dir.mkdir(exist_ok=True)
+            code_hdr = topic.build_dir / "codefont.tex"
+            code_hdr.write_text(code_font_header(settings.data["codefontsize"]), encoding="utf-8")
+            cmd += ["-H", str(code_hdr)]
 
     env = tex_env()
     if uses_mermaid(topic, order):

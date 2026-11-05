@@ -20,3 +20,10 @@
 \newtcolorbox{tutornote}{enhanced, breakable, colback=black!4, colframe=black!40,
   boxrule=0pt, leftrule=2.5pt, arc=0pt, outer arc=0pt, left=8pt, right=8pt, top=4pt, bottom=4pt,
   before skip=10pt, after skip=10pt, fontupper=\small}
+% Korean/CJK next to Latin: no extra gap where the source has none ("map은", not "map 은").
+% Spaces written in the source are kept (xeCJK's default xCJKecglue=false).
+\makeatletter
+% The en dash (–) is set in the Latin font: xeCJK would otherwise use the CJK font, and many
+% Korean fonts (e.g. 조선굵은명조) have no en dash.
+\@ifpackageloaded{xeCJK}{\xeCJKsetup{CJKecglue={}}\xeCJKDeclareCharClass{Default}{"2013}}{}
+\makeatother

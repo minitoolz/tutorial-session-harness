@@ -177,6 +177,8 @@ def cmd_settings(root, args) -> int:
         problems.append(f"style '{s.style}' unknown; available: {', '.join(build_mod.styles())}")
     if not build_mod.xelatex_available():
         problems.append("xelatex not on PATH (install MacTeX / TeX Live)")
+    if s.data.get("codefontsize") and not build_mod.CODE_FONTSIZE_RE.match(str(s.data["codefontsize"])):
+        problems.append(f"codefontsize '{s.data['codefontsize']}' must be a point size such as 9pt")
     fonts = {k: s.data.get(k) for k in ("mainfont", "sansfont", "monofont", "mathfont", "CJKmainfont") if s.data.get(k)}
     if fonts:
         if shutil.which("fc-list"):

@@ -475,6 +475,24 @@ def test_settings_reports_untested_mmdc(ready, capsys, monkeypatch):
     assert "mermaid-cli 13.0.0 is outside the versions" in out(capsys)
 
 
+def test_code_font_header():
+    hdr = build_mod.code_font_header("9pt")
+    assert "\\fvset{fontsize=\\fontsize{9pt}{10.8pt}\\selectfont}" in hdr
+    assert "\\AtBeginEnvironment{verbatim}" in hdr
+    with pytest.raises(Exception):
+        build_mod.code_font_header("small")
+
+
+@pytest.mark.skipif(not build_mod.xelatex_available(), reason="xelatex not installed")
+def test_build_pdf_with_code_font_size(ready, topic):
+    write_settings(ready, extra="codefontsize: 9pt\n")
+    assert main(["start"]) == 0
+    (topic / "definition.md").write_text(
+        "# Definition\n\n```python\nprint(1)\n```\n\n```\nplain\n```\n", encoding="utf-8")
+    assert main(["build", "demo"]) == 0
+    assert "9pt" in (topic / "build" / "codefont.tex").read_text(encoding="utf-8")
+
+
 def test_build_without_mmdc_explains_install(topic, capsys, monkeypatch):
     _add_mermaid_page(topic)
     monkeypatch.setattr(build_mod, "mmdc_bin", lambda: None)
