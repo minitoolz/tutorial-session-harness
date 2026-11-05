@@ -267,6 +267,17 @@ def test_review_low_cohesion(topic, capsys, text, flagged):
     assert ("[low-cohesion]" in out(capsys)) is flagged
 
 
+def test_review_low_cohesion_skips_captions_and_glossary(topic, capsys):
+    caption = "<figcaption>Lineage. Solid lines inherit ideas. Dashed lines are later work.</figcaption>"
+    (topic / "definition.md").write_text(f"# D\n\n<figure>\n{caption}\n</figure>\n", encoding="utf-8")
+    (topic / "glossary.md").write_text(
+        "# Glossary\n\nLogit\n:   A raw score. It is not a probability. Softmax normalizes it.\n",
+        encoding="utf-8",
+    )
+    main(["review", "demo"])
+    assert "[low-cohesion]" not in out(capsys)
+
+
 def test_review_low_cohesion_can_be_disabled(ready, capsys):
     write_settings(ready, extra="review:\n  max_unlinked_sentences: -1\n")
     assert main(["start"]) == 0

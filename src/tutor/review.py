@@ -22,6 +22,8 @@ from .topic import GLOSSARY, Topic
 ABBREV_RE = re.compile(r"\b(e\.g|i\.e|etc|vs|cf|et al|Fig|Eq|Sec|approx|resp)\.", re.IGNORECASE)
 SENT_SPLIT_RE = re.compile(r"(?<=[.!?。？！])\s+")
 CJK_RE = re.compile(r"[ᄀ-ᇿ぀-ヿ㄰-㆏一-鿿가-힯]")
+# HTML blocks hold captions and cells, not running prose; inline tags like <dfn> don't count.
+HTML_BLOCK_RE = re.compile(r"^<(figure|figcaption|img|table|thead|tbody|tr|td|th|details|summary|div)\b", re.I)
 LABEL_RE = re.compile(r"\b([A-Z][A-Za-z]{0,5})[-_]?(\d{1,2})\b")
 
 
@@ -148,6 +150,8 @@ def _cohesion(page: str, text: str, limits: dict, connectives: list[re.Pattern])
     if not connectives or limit is None or limit < 0:
         return issues
     for start, par in mdscan.paragraphs(text):
+        if HTML_BLOCK_RE.match(par.lstrip()):
+            continue
         sents = _sentences(mdscan.strip_inline(par))
         run: list[str] = []
         for s in sents[1:]:
@@ -207,7 +211,8 @@ def review(topic: Topic, settings: Settings, root: Path, only_page: str | None =
             continue
         text = f.read_text(encoding="utf-8")
         issues += _structure(page, text, limits)
-        issues += _cohesion(page, text, limits, connectives)
+        if page != GLOSSARY:  # definition lists are reference entries, not running prose
+            issues += _cohesion(page, text, limits, connectives)
         issues += _pattern_hits(page, text, rules["phrases"], "phrase")
         issues += _pattern_hits(page, text, rules["hedges"], "hedge")
         issues += _opaque_labels(page, text, rules["label_allowlist"])
