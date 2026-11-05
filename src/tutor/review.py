@@ -183,7 +183,9 @@ def _undefined_terms(topic: Topic, order: list[str]) -> list[Issue]:
     for pi, page in enumerate(pages):
         text = (topic.path / page).read_text(encoding="utf-8")
         for ln in mdscan.scan(text):
-            if ln.kind != "blank":
+            # a heading names what the text under it is about ("## UniAD"); the definition
+            # follows right below, so only prose counts as an early use
+            if ln.kind not in ("blank", "heading"):
                 flow.append((pi, ln.no, page, ln.text))
         for line, term in mdscan.definitions(text):
             defs.setdefault(term.lower(), (pi, line, term))
@@ -285,6 +287,8 @@ def _symbol_atoms(tex: str) -> tuple[list[str], bool]:
     atoms = [re.sub(r"\s+", "", m.group(0)) for m in _ATOM_RE.finditer(t)]
     if "e^" in tex.replace(" ", ""):
         atoms = [a for a in atoms if a != "e"]  # Euler's number
+    if re.search(r"(?<![A-Za-z\\])O\(", tex):
+        atoms = [a for a in atoms if a != "O"]  # big-O notation
     simple = bool(_SIMPLE_REST_RE.match(_ATOM_RE.sub("", t)))
     return atoms, simple
 
