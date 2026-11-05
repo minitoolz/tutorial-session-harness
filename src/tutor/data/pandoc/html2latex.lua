@@ -9,9 +9,10 @@ element from its opening tag to its matching closing tag, serialises the
 slice back to HTML (inner markdown/math included), and re-reads it with
 pandoc's HTML reader so it becomes a real table / image / sub / sup / ...
 
-It numbers labelled display math: `$$ ... \label{eq:x} $$` becomes
-`\begin{equation} ... \end{equation}` in LaTeX, so `\eqref{eq:x}` works.
-`$$ ... $$` without a label stays unnumbered.
+It makes `$$ ... $$` the only display-math syntax a page needs:
+  `$$ ... \label{eq:x} $$`            -> \begin{equation} ... \end{equation} (numbered)
+  `$$ \begin{align} ... \end{align} $$` -> the align environment itself
+  `$$ ... $$` without a label          -> unnumbered, as pandoc writes it
 
 It also implements code includes:
   ```{.python include="codes/softmax.py" lines="3-20"}
@@ -243,16 +244,36 @@ local function fix_inlines(inlines)
 end
 
 ------------------------------------------------------------------------
--- Labelled display math
+-- Display math written as $$ ... $$
 ------------------------------------------------------------------------
+-- Environments that make their own display (and numbers) in LaTeX; they can't
+-- sit inside the \[ ... \] that pandoc writes for $$ ... $$.
+local TOP_ENVS = {
+  equation = true, align = true, gather = true, multline = true,
+  flalign = true, alignat = true, eqnarray = true,
+}
+
 local function display_math(m)
-  if m.mathtype ~= "DisplayMath" or not m.text:find("\\label{") then return nil end
+  if m.mathtype ~= "DisplayMath" then return nil end
+  local tex = m.text:match("^%s*(.-)%s*$")
+  local env = tex:match("^\\begin{(%a+)%*?}")
+  local has_label = tex:find("\\label{") ~= nil
   if is_latex then
-    local tex = m.text:match("^%s*(.-)%s*$")
-    return pandoc.RawInline("latex", "\\begin{equation}\n" .. tex .. "\n\\end{equation}")
+    -- $$ \begin{align} ... \end{align} $$: emit the environment itself
+    if env and TOP_ENVS[env] and tex:match("\\end{" .. env .. "%*?}$") then
+      return pandoc.RawInline("latex", tex)
+    end
+    -- $$ ... \label{eq:x} $$: a numbered equation
+    if has_label then
+      return pandoc.RawInline("latex", "\\begin{equation}\n" .. tex .. "\n\\end{equation}")
+    end
+    return nil
   end
-  -- other formats (HTML preview): drop the label so it doesn't render as text
-  return pandoc.Math("DisplayMath", (m.text:gsub("\\label{[^}]*}", "")))
+  -- other formats (HTML preview): drop labels so they don't render as text
+  if has_label then
+    return pandoc.Math("DisplayMath", (m.text:gsub("\\label{[^}]*}", "")))
+  end
+  return nil
 end
 
 ------------------------------------------------------------------------

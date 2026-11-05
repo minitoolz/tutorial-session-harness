@@ -7,6 +7,7 @@ import shutil
 from pathlib import Path
 
 import pytest
+import yaml
 
 from tutor import build as build_mod
 from tutor.cli import main
@@ -55,11 +56,13 @@ def topic(ready):
     t = ready / "topics" / "demo"
     (t / "abstract.md").write_text("A short abstract with $x^2$.\n", encoding="utf-8")
     (t / "intro.md").write_text("# Introduction\n\nWe study **softmax** here.\n", encoding="utf-8")
-    (t / "contents.md").write_text(
+    (t / "index.md").write_text("# Contents\n\n1. [Definition](definition.md)\n", encoding="utf-8")
+    (t / "definition.md").write_text(
         "# Definition\n\nThe **logit** is a raw score.\n\n"
-        "\\begin{equation}\np_i = \\frac{e^{z_i}}{\\sum_j e^{z_j}} \\label{eq:sm}\n\\end{equation}\n\n"
+        "$$\np_i = \\frac{e^{z_i}}{\\sum_j e^{z_j}} \\label{eq:sm}\n$$\n\n"
         "See \\eqref{eq:sm}. Water is H<sub>2</sub>O.\n\n"
         "$$\nq = z^2 \\label{eq:q}\n$$\n\nSee \\eqref{eq:q}.\n\n$$ r = 1 $$\n\n"
+        "$$\n\\begin{align}\na &= b \\label{eq:ab} \\\\\nc &= d\n\\end{align}\n$$\n\n"
         "<table>\n<tr><th>name</th><th>value</th></tr>\n<tr><td>**fp32**</td><td>$x^2$</td></tr>\n</table>\n",
         encoding="utf-8",
     )
@@ -104,9 +107,11 @@ def test_changed_settings_must_be_reread(ready, capsys):
 def test_new_topic_skeleton(ready):
     assert main(["new", "attention-basics", "--title", "Attention"]) == 0
     t = ready / "topics" / "attention-basics"
-    for f in ("abstract.md", "intro.md", "contents.md", "glossary.md", "topic.yaml", "imgs", "codes"):
+    for f in ("abstract.md", "intro.md", "index.md", "glossary.md", "topic.yaml", "imgs", "codes"):
         assert (t / f).exists()
     assert 'title: "Attention"' in (t / "topic.yaml").read_text()
+    assert "order" not in yaml.safe_load((t / "topic.yaml").read_text())
+    assert main(["lint", "attention-basics"]) == 0  # a fresh topic lints clean
 
 
 def test_topic_name_must_be_kebab(ready, capsys):
@@ -114,11 +119,37 @@ def test_topic_name_must_be_kebab(ready, capsys):
     assert "kebab-case" in out(capsys)
 
 
-def test_order_reset_puts_paper_pages_first_glossary_last(topic, capsys):
+def test_order_follows_index(topic, capsys):
     (topic / "appendix.md").write_text("# Appendix\n")
-    assert main(["order", "demo", "--reset"]) == 0
-    assert out(capsys).split() == ["1.", "abstract.md", "2.", "intro.md", "3.", "contents.md",
-                                   "4.", "appendix.md", "5.", "glossary.md"]
+    (topic / "index.md").write_text(
+        "# Contents\n\n<!-- 1. [Ignored](ignored.md) -->\n"
+        "1. [Appendix](appendix.md)\n2. [Definition](definition.md)\n", encoding="utf-8")
+    assert main(["order", "demo"]) == 0
+    assert out(capsys).split()[:10] == ["1.", "abstract.md", "2.", "intro.md", "3.", "appendix.md",
+                                        "4.", "definition.md", "5.", "glossary.md"]
+
+
+def test_migrate_splits_contents_into_section_pages(topic, capsys):
+    (topic / "index.md").unlink()
+    (topic / "definition.md").unlink()
+    (topic / "topic.yaml").write_text(
+        (topic / "topic.yaml").read_text() + "order:\n  - abstract.md\n  - contents.md\n")
+    (topic / "imgs" / "contents-plot.png").write_bytes(b"x")
+    (topic / "contents.md").write_text(
+        "<!-- template comment -->\n# Logits {#sec:logits}\n\nThe **logit** is a raw score.\n\n"
+        "```python\n# not a heading\n```\n\n"
+        "# Softmax\n\nWe study **softmax**. ![p](imgs/contents-plot.png)\n", encoding="utf-8")
+    assert main(["lint", "demo"]) == 1
+    assert "tutor migrate" in out(capsys)
+    assert main(["migrate", "demo"]) == 0
+    assert not (topic / "contents.md").exists()
+    assert (topic / "index.md").read_text() == "# Contents\n\n1. [Logits](logits.md)\n2. [Softmax](softmax.md)\n"
+    assert "# not a heading" in (topic / "logits.md").read_text()
+    assert "imgs/softmax-plot.png" in (topic / "softmax.md").read_text()
+    assert (topic / "imgs" / "softmax-plot.png").exists()
+    assert "order" not in yaml.safe_load((topic / "topic.yaml").read_text())
+    capsys.readouterr()
+    assert main(["lint", "demo"]) == 0
 
 
 # ── lint ────────────────────────────────────────────────────────────────────
@@ -130,27 +161,40 @@ def test_lint_clean(topic, capsys):
 
 def test_lint_image_naming_and_references(topic, capsys):
     (topic / "imgs" / "Figure1.png").write_bytes(b"x")
-    (topic / "imgs" / "contents-ok.png").write_bytes(b"x")
-    with (topic / "contents.md").open("a") as f:
-        f.write("\n![a](imgs/contents-ok.png)\n![b](imgs/contents-missing.png)\n")
+    (topic / "imgs" / "definition-ok.png").write_bytes(b"x")
+    with (topic / "definition.md").open("a") as f:
+        f.write("\n![a](imgs/definition-ok.png)\n![b](imgs/definition-missing.png)\n")
     assert main(["lint", "demo"]) == 1
     o = out(capsys)
     assert "imgs/Figure1.png" in o and "{pagename}-{short-name}" in o
-    assert "contents-missing.png' does not exist" in o
-    assert "contents-ok.png" not in o
+    assert "definition-missing.png' does not exist" in o
+    assert "definition-ok.png" not in o
 
 
-def test_lint_order_mismatch(topic, capsys):
+def test_lint_index_must_match_pages(topic, capsys):
     (topic / "extra.md").write_text("# Extra\n")
+    with (topic / "index.md").open("a") as f:
+        f.write("2. [Gone](gone.md)\n3. [Again](definition.md)\n4. [Intro](intro.md)\n")
     assert main(["lint", "demo"]) == 1
-    assert "'extra.md' exists but is not in order" in out(capsys)
+    o = out(capsys)
+    assert "extra.md  page is not listed in index.md" in o
+    assert "'gone.md' does not exist" in o
+    assert "'definition.md' is listed twice" in o
+    assert "'intro.md' has a fixed place" in o
 
 
 def test_lint_unbalanced_math(topic, capsys):
-    with (topic / "contents.md").open("a") as f:
+    with (topic / "definition.md").open("a") as f:
         f.write("\nBroken $x + y here.\n")
     assert main(["lint", "demo"]) == 1
     assert "unbalanced inline math" in out(capsys)
+
+
+def test_lint_warns_on_bare_math_environment(topic, capsys):
+    with (topic / "definition.md").open("a") as f:
+        f.write("\n\\begin{equation}\nx = 1 \\label{eq:bare}\n\\end{equation}\n")
+    assert main(["lint", "demo"]) == 0  # a warning, not an error
+    assert "outside $$" in out(capsys)
 
 
 def test_glossary_is_required(topic, capsys):
@@ -161,7 +205,7 @@ def test_glossary_is_required(topic, capsys):
 
 
 def test_glossary_consistency(topic, capsys):
-    with (topic / "contents.md").open("a") as f:
+    with (topic / "definition.md").open("a") as f:
         f.write("\nA <dfn>temperature</dfn> divides the logits.\n")
     (topic / "glossary.md").write_text(
         "# Glossary\n\nLogit\n:   score\n\nLogit\n:   again\n\n"
@@ -193,13 +237,13 @@ The L1 and L2 norms on an A100 and an H100 are fine.
 
 
 def test_review_flags_each_problem(topic, capsys):
-    (topic / "contents.md").write_text(BAD, encoding="utf-8")
-    assert main(["review", "demo", "contents.md"]) == 0
+    (topic / "definition.md").write_text(BAD, encoding="utf-8")
+    assert main(["review", "demo", "definition.md"]) == 0
     o = out(capsys)
     for tag in ("[long-sentence]", "[phrase] '버그를 밟'", "[hedge] 'may not apply'", "[opaque-label] E1, E2, E3"):
         assert tag in o, tag
     assert "L1" not in o and "A100" not in o
-    assert main(["review", "demo", "contents.md", "--strict"]) == 1
+    assert main(["review", "demo", "definition.md", "--strict"]) == 1
 
 
 def test_review_undefined_term(topic, capsys):
@@ -239,7 +283,7 @@ def test_html_survives_into_latex(topic):
     import subprocess
 
     tex = subprocess.run(
-        [build_mod.pandoc_bin(), "contents.md", "-f", "markdown", "-t", "latex",
+        [build_mod.pandoc_bin(), "definition.md", "-f", "markdown", "-t", "latex",
          "--lua-filter", str(build_mod.data_path("pandoc", "html2latex.lua"))],
         cwd=topic, capture_output=True, text=True, check=True,
     ).stdout
@@ -249,3 +293,6 @@ def test_html_survives_into_latex(topic):
     # labelled $$ math becomes a numbered equation; unlabelled stays unnumbered
     assert "\\begin{equation}\nq = z^2 \\label{eq:q}\n\\end{equation}" in tex
     assert re.search(r"\\\[\s*r = 1\s*\\\]", tex)
+    # $$ around align: the align environment itself, not nested in \[ ... \]
+    assert "\\begin{align}\na &= b \\label{eq:ab}" in tex
+    assert "\\[\\begin{align}" not in tex and "\\begin{equation}\n\\begin{align}" not in tex

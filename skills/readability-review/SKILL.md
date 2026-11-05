@@ -6,7 +6,7 @@ when-to-use: Before you finish any turn in which you wrote or changed tutorial p
 
 # Readability review
 
-1. Run `uv run tutor review <topic>`. Optionally pass a page: `uv run tutor review <topic> contents.md`.
+1. Run `uv run tutor review <topic>`. Optionally pass a page: `uv run tutor review <topic> softmax.md`.
 2. Fix every flag in the text you wrote this turn:
    - `[long-sentence]`: split it into one idea per sentence.
    - `[long-paragraph]`: split it by topic.

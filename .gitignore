@@ -17,3 +17,4 @@ dist/
 
 # --- os / editors ---
 .DS_Store
+.vscode/

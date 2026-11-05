@@ -8,6 +8,7 @@ import subprocess
 import sys
 
 from . import build as build_mod
+from . import migrate as migrate_mod
 from . import settings as settings_mod
 from . import topic as topic_mod
 from .lint import lint
@@ -16,9 +17,11 @@ from .settings import TutorError
 
 RULES_SUMMARY = """\
 - Follow SETTINGS.md: write for the `audience` it describes, in its `language`.
-- Topic data lives only in topics/<topic>/: abstract.md, intro.md, contents.md, glossary.md (+ extra pages),
-  topic.yaml (`order` = render order), imgs/{pagename}-{short-name}.{ext}, codes/.
-- When contents change, reconcile intro.md, abstract.md and glossary.md in the same turn.
+- Topic data lives only in topics/<topic>/: abstract.md, intro.md, index.md, glossary.md, section pages,
+  topic.yaml (title/author/date), imgs/{pagename}-{short-name}.{ext}, codes/.
+- index.md is the table of contents: a numbered list linking every section page in reading order.
+  It sets the PDF order (abstract, intro, sections, glossary). Keep it current.
+- When a section page changes, reconcile index.md, intro.md, abstract.md and glossary.md in the same turn.
 - Write by skills/clear-writing/SKILL.md; end each turn with `uv run tutor review <topic>`
   (fix the flags) and `uv run tutor lint <topic>` (must pass).
 - Full rules: AGENTS.md. Workflows: skills/<name>/SKILL.md."""
@@ -63,7 +66,7 @@ def cmd_start(root, args) -> int:
         print("(none yet — `uv run tutor new <kebab-name>`)")
     for name in topics:
         t = topic_mod.Topic(root, name)
-        print(f"- {name}: {t.meta().get('title', '')!s}  [{', '.join(t.order())}]")
+        print(f"- {name}: {t.meta().get('title', '')!s}  [sections: {', '.join(t.sections()) or '(none)'}]")
     print("\n--- rules ---")
     print(RULES_SUMMARY)
     print("\nOK: settings acknowledged for this session.")
@@ -74,7 +77,8 @@ def cmd_new(root, args) -> int:
     s = settings_mod.gate(root)
     t = topic_mod.create(root, args.name, s, title=args.title)
     print(f"Created {t.path.relative_to(root)}/")
-    print("Next: interview the user about this topic, then draft intro.md → contents.md (+ glossary.md) → abstract.md")
+    print("Next: interview the user about this topic, then draft index.md (section list) → intro.md →")
+    print("section pages (+ glossary.md) → abstract.md")
     print("(see skills/new-topic/SKILL.md).")
     return 0
 
@@ -99,13 +103,18 @@ def cmd_review(root, args) -> int:
 
 def cmd_order(root, args) -> int:
     t = topic_mod.get(root, args.topic)
-    if args.reset:
-        t.set_order(topic_mod.default_order(t.pages()))
-    elif args.set:
-        t.set_order(args.set)
     for i, p in enumerate(t.order(), start=1):
         mark = "" if (t.path / p).is_file() else "   <-- missing"
         print(f"{i}. {p}{mark}")
+    print("(set the section order by editing index.md)")
+    return 0
+
+
+def cmd_migrate(root, args) -> int:
+    t = topic_mod.get(root, args.topic)
+    for line in migrate_mod.migrate(t):
+        print(line)
+    print(f"Next: check index.md titles, then run `uv run tutor lint {t.name}`.")
     return 0
 
 
@@ -172,14 +181,14 @@ def main(argv: list[str] | None = None) -> int:
 
     p = sub.add_parser("review", help="readability heuristics (file:line warnings)")
     p.add_argument("topic")
-    p.add_argument("page", nargs="?", help="only this page, e.g. contents.md")
+    p.add_argument("page", nargs="?", help="only this page, e.g. softmax.md")
     p.add_argument("--strict", action="store_true", help="exit 1 if anything is flagged")
 
-    p = sub.add_parser("order", help="show / set / reset the render order")
+    p = sub.add_parser("order", help="show the render order (set by index.md)")
     p.add_argument("topic")
-    g = p.add_mutually_exclusive_group()
-    g.add_argument("--reset", action="store_true", help="abstract, intro, contents, then others A→Z")
-    g.add_argument("--set", nargs="+", metavar="PAGE", help="explicit order")
+
+    p = sub.add_parser("migrate", help="split an old contents.md into section pages + index.md")
+    p.add_argument("topic")
 
     p = sub.add_parser("build", help="render the topic to PDF (or --html preview)")
     p.add_argument("topic")
@@ -191,7 +200,7 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
     handlers = {
         "start": cmd_start, "new": cmd_new, "lint": cmd_lint, "review": cmd_review,
-        "order": cmd_order, "build": cmd_build, "settings": cmd_settings,
+        "order": cmd_order, "migrate": cmd_migrate, "build": cmd_build, "settings": cmd_settings,
     }
     try:
         root = settings_mod.find_root()

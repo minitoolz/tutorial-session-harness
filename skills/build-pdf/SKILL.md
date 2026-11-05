@@ -8,7 +8,10 @@ when-to-use: The user asks for a PDF, a preview, or a different look.
 
 1. `uv run tutor build <topic>` → `topics/<topic>/build/<topic>.pdf`.
    It runs lint first and stops on errors.
-   - The pages are rendered in `order` from topic.yaml. `abstract.md` becomes the abstract block.
+   - The pages are rendered as `intro.md`, the section pages in `index.md` order, then
+     `glossary.md` (`uv run tutor order <topic>` shows it). `abstract.md` becomes the abstract
+     block. `index.md` itself is not printed; set `toc: true` in SETTINGS.md for a printed
+     table of contents.
    - Fonts, language, paper and style come from SETTINGS.md. To try another style once, use
      `--style paper`. To change it permanently, edit `style:` in SETTINGS.md and re-run
      `uv run tutor start`.

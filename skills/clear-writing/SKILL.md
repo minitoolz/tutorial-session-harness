@@ -1,7 +1,7 @@
 ---
 name: clear-writing
 description: Mandatory rules for every paragraph of tutorial prose. Keeps text readable for the specific user in SETTINGS.md.
-when-to-use: Any time you write or rewrite text in a topic page (abstract, intro, contents, extra pages).
+when-to-use: Any time you write or rewrite text in a topic page (abstract, intro, section pages).
 ---
 
 # Clear writing
@@ -39,7 +39,7 @@ Read `audience` in SETTINGS.md: `field`, `background`, `strong_in`, `weak_in`, `
 ## 3. Short dependency chains
 
 - **Define before use.** Every term and symbol is explained at or before its first appearance in
-  reading order (the order in topic.yaml). Mark the definition with `<dfn>term</dfn>` or **bold** so
+  reading order (intro, then the section pages in `index.md` order). Mark the definition with `<dfn>term</dfn>` or **bold** so
   `tutor review` can check it, and add the term to `glossary.md`. The glossary entry is a
   reminder for the reader. It never replaces the definition in the text.
 - A sentence should depend only on the last few sentences, or on something it names explicitly

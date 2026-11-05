@@ -7,12 +7,13 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from . import mdscan
-from .topic import GLOSSARY, IMG_EXTS, REQUIRED_PAGES, Topic
+from .topic import GLOSSARY, IMG_EXTS, INDEX, REQUIRED_PAGES, TOPIC_NAME_RE, Topic
 
 MD_IMG_RE = re.compile(r"!\[[^\]]*\]\(\s*<?([^)\s>]+)")
 HTML_SRC_RE = re.compile(r"""\bsrc\s*=\s*["']([^"']+)["']""")
 LINK_RE = re.compile(r"(?<!!)\[[^\]]*\]\(\s*<?([^)\s>]+)")
 INCLUDE_RE = re.compile(r"""\binclude\s*=\s*["']([^"']+)["']""")
+BARE_ENV_RE = re.compile(r"^\s*\\begin\{(equation|align|gather|multline|flalign|alignat|eqnarray)\*?\}")
 
 
 @dataclass
@@ -59,6 +60,10 @@ def _math_balance(page: str, text: str) -> list[Issue]:
             continue
         s = re.sub(r"`[^`]*`", "", line).replace(r"\$", "")
         n_display = s.count("$$")
+        if not dollars_open_at and not n_display and BARE_ENV_RE.match(s):
+            issues.append(Issue("warning", page, i,
+                                "display math environment outside $$; wrap it in $$ ... $$ so "
+                                "Markdown previews render it (the build keeps it numbered)"))
         if n_display % 2:
             dollars_open_at = 0 if dollars_open_at else i
         single = s.replace("$$", "").count("$")
@@ -102,30 +107,61 @@ def _glossary(topic: Topic, pages: list[str]) -> list[Issue]:
     return issues
 
 
+def _index(topic: Topic, pages: list[str]) -> list[Issue]:
+    """index.md lists every section page once, in reading order, and nothing else."""
+    if not (topic.path / INDEX).is_file():
+        return []  # reported as a missing required page
+    issues: list[Issue] = []
+    entries = topic.index_entries()
+    if not entries:
+        issues.append(Issue("warning", INDEX, 0,
+                            "lists no section pages yet (format: `1. [Title](page-name.md)`)"))
+    seen: set[str] = set()
+    for line, _title, target in entries:
+        if target in seen:
+            issues.append(Issue("error", INDEX, line, f"'{target}' is listed twice"))
+            continue
+        seen.add(target)
+        if target in REQUIRED_PAGES:
+            issues.append(Issue("error", INDEX, line,
+                                f"'{target}' has a fixed place in the PDF; list only section pages"))
+        elif "/" in target or not target.endswith(".md"):
+            issues.append(Issue("error", INDEX, line,
+                                f"'{target}' must be a .md page in the topic folder (no subfolders)"))
+        elif target not in pages:
+            issues.append(Issue("error", INDEX, line, f"'{target}' does not exist"))
+        elif not TOPIC_NAME_RE.match(Path(target).stem):
+            issues.append(Issue("error", INDEX, line,
+                                f"'{target}': page names are lowercase kebab-case, e.g. softmax.md"))
+    for page in pages:
+        if page in REQUIRED_PAGES or page in seen:
+            continue
+        hint = (" Run `uv run tutor migrate <topic>` to split it into section pages."
+                if page == "contents.md" else " Add it to index.md, or move it out of the topic root.")
+        issues.append(Issue("error", page, 0, "page is not listed in index.md." + hint))
+    return issues
+
+
 def lint(topic: Topic) -> list[Issue]:
     issues: list[Issue] = []
     p = topic.path
 
     for req in REQUIRED_PAGES:
         if not (p / req).is_file():
-            issues.append(Issue("error", req, 0, "required page is missing"))
+            hint = (" (old layout: run `uv run tutor migrate <topic>`)"
+                    if req == INDEX and (p / "contents.md").is_file() else "")
+            issues.append(Issue("error", req, 0, "required page is missing" + hint))
     for d in ("imgs", "codes"):
         if not (p / d).is_dir():
             issues.append(Issue("error", d + "/", 0, "required directory is missing"))
 
     if not topic.yaml_path.is_file():
-        issues.append(Issue("error", "topic.yaml", 0, "missing (run `uv run tutor order <topic> --reset`)"))
+        issues.append(Issue("error", "topic.yaml", 0, "missing (title, subtitle, author, date)"))
+    elif "order" in topic.meta():
+        issues.append(Issue("warning", "topic.yaml", 0,
+                            "`order` is no longer used: index.md sets the section order. Remove it."))
     pages = topic.pages()
-    order = topic.order()
-    for entry in order:
-        if entry not in pages:
-            issues.append(Issue("error", "topic.yaml", 0, f"order lists '{entry}' but the file does not exist"))
-    for page in pages:
-        if page not in order:
-            issues.append(Issue("error", "topic.yaml", 0,
-                                f"'{page}' exists but is not in order (add it, or move it out of the topic root)"))
-    if len(set(order)) != len(order):
-        issues.append(Issue("error", "topic.yaml", 0, "order contains duplicates"))
+    issues.extend(_index(topic, pages))
 
     stems = {Path(pg).stem for pg in pages}
     img_re = re.compile(r"^([a-z0-9]+(?:-[a-z0-9]+)*?)-([a-z0-9]+(?:-[a-z0-9]+)*)\.(" + "|".join(IMG_EXTS) + r")$")
@@ -170,5 +206,5 @@ def lint(topic: Topic) -> list[Issue]:
         if rel not in referenced:
             issues.append(Issue("warning", rel, 0, "image is not referenced by any page"))
 
-    issues.extend(_glossary(topic, pages))
+    issues.extend(_glossary(topic, [pg for pg in pages if pg != INDEX]))
     return issues

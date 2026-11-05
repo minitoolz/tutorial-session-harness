@@ -1,4 +1,4 @@
-"""Topic directory model: paths, topic.yaml, render order."""
+"""Topic directory model: paths, topic.yaml, index.md and the render order derived from it."""
 
 from __future__ import annotations
 
@@ -13,18 +13,35 @@ import yaml
 
 from .settings import Settings, TutorError
 
-REQUIRED_PAGES = ("abstract.md", "intro.md", "contents.md", "glossary.md")
-GLOSSARY = "glossary.md"
+ABSTRACT, INTRO, INDEX, GLOSSARY = "abstract.md", "intro.md", "index.md", "glossary.md"
+REQUIRED_PAGES = (ABSTRACT, INTRO, INDEX, GLOSSARY)
 TOPIC_NAME_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 IMG_EXTS = ("png", "jpg", "jpeg", "svg", "pdf", "gif", "webp")
+# One list item per section page: `1. [Title](page.md)` (or `- [Title](page.md)`).
+INDEX_ITEM_RE = re.compile(r"^\s*(?:\d+[.)]|[-*+])\s+\[([^\]]*)\]\(\s*<?([^)\s>]+)>?\s*\)")
 
 
-def default_order(pages: list[str]) -> list[str]:
-    """abstract, intro, contents, extra pages A→Z, glossary last."""
-    head = [p for p in ("abstract.md", "intro.md", "contents.md") if p in pages]
-    rest = sorted(p for p in pages if p not in REQUIRED_PAGES)
-    tail = [GLOSSARY] if GLOSSARY in pages else []
-    return head + rest + tail
+def parse_index(text: str) -> list[tuple[int, str, str]]:
+    """(line, title, target) for each list item in index.md, skipping comments and code."""
+    out: list[tuple[int, str, str]] = []
+    in_comment = in_fence = False
+    for i, raw in enumerate(text.splitlines(), start=1):
+        s = raw.strip()
+        if in_comment:
+            in_comment = "-->" not in s
+            continue
+        if s.startswith("<!--"):
+            in_comment = "-->" not in s
+            continue
+        if s.startswith("```") or s.startswith("~~~"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        m = INDEX_ITEM_RE.match(raw)
+        if m:
+            out.append((i, m.group(1).strip(), m.group(2)))
+    return out
 
 
 @dataclass
@@ -57,15 +74,24 @@ class Topic:
         data = yaml.safe_load(self.yaml_path.read_text(encoding="utf-8")) or {}
         return data if isinstance(data, dict) else {}
 
-    def order(self) -> list[str]:
-        return list(self.meta().get("order") or [])
+    def index_entries(self) -> list[tuple[int, str, str]]:
+        f = self.path / INDEX
+        return parse_index(f.read_text(encoding="utf-8")) if f.is_file() else []
 
-    def set_order(self, order: list[str]) -> None:
-        meta = self.meta()
-        meta["order"] = order
-        self.yaml_path.write_text(
-            yaml.safe_dump(meta, allow_unicode=True, sort_keys=False), encoding="utf-8"
-        )
+    def sections(self) -> list[str]:
+        """Section pages in the order index.md lists them (duplicates dropped)."""
+        seen: list[str] = []
+        for _, _, target in self.index_entries():
+            if target not in seen:
+                seen.append(target)
+        return seen
+
+    def order(self) -> list[str]:
+        """Render order: abstract, intro, the sections from index.md, glossary.
+
+        index.md itself is the table of contents and is not rendered."""
+        fixed = set(REQUIRED_PAGES)
+        return [ABSTRACT, INTRO] + [p for p in self.sections() if p not in fixed] + [GLOSSARY]
 
 
 def get(root: Path, name: str) -> Topic:

@@ -1,11 +1,5 @@
-# Filled in by `tutor new`. The agent keeps `order` up to date: it is the
-# exact sequence of pages rendered into the PDF.
+# Filled in by `tutor new`. The section order lives in index.md.
 title: "__TITLE__"
 subtitle: ""
 author: "__AUTHOR__"
 date: "__DATE__"
-order:
-  - abstract.md
-  - intro.md
-  - contents.md
-  - glossary.md

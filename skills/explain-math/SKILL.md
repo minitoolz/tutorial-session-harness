@@ -26,8 +26,9 @@ Match the depth to `audience.math_level` in SETTINGS.md.
 
 ## Derivations
 
-- One transformation per line, in `align`. Put a short reason on lines that aren't obvious,
-  e.g. `&= ... && \text{(divide by } e^{c}\text{)}`.
+- One transformation per line, in `$$ \begin{align*} ... \end{align*} $$` (or `align` with a
+  `\label` on lines you cite). Always wrap display math in `$$`. Put a short reason on lines that
+  aren't obvious, e.g. `&= ... && \text{(divide by } e^{c}\text{)}`.
 - Don't skip algebra the reader's `math_level` would stumble on.
 - Number only the equations you refer to later: add `\label{eq:...}` inside the `$$...$$` block and
   cite it with `\eqref`. Leave the label out for the rest; they stay unnumbered.

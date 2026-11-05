@@ -11,14 +11,18 @@ when-to-use: The user wants to understand something that has no topic under topi
    SETTINGS.md to decide the starting point.
 2. **Create it:** `uv run tutor new <kebab-name> --title "<Readable Title>"`.
 3. **Draft in this order:**
-   1. `intro.md`: motivation for *this* reader, prerequisites (what is assumed and what will be
-      explained), and a roadmap with one sentence per planned section.
-   2. `contents.md`: sections under `#` headings. Each section starts concrete (an example or a
-      small number case), then generalizes. Follow `skills/clear-writing` and, for equations,
-      `skills/explain-math`.
-   3. `glossary.md`: one entry per term you marked as defined (`<dfn>` / **bold**), written for
+   1. `index.md`: the planned sections as a numbered list of links, one page per section,
+      e.g. `1. [Logits](logits.md)`. Agree on this outline with the user before writing pages.
+   2. `intro.md`: motivation for *this* reader, prerequisites (what is assumed and what will be
+      explained), and a roadmap with one sentence per section in `index.md`.
+   3. Section pages (`logits.md`, ...): each starts with a `#` heading matching its `index.md`
+      title, starts concrete (an example or a small number case), then generalizes. Follow
+      `skills/clear-writing` and, for equations, `skills/explain-math`. List a page in
+      `index.md` as soon as you create it; drop planned entries you haven't written yet before
+      ending the turn (lint fails on links to missing pages).
+   4. `glossary.md`: one entry per term you marked as defined (`<dfn>` / **bold**), written for
       this reader (format in AGENTS.md §3).
-   4. `abstract.md`: written last, 3–6 sentences, no heading. What the reader will understand
+   5. `abstract.md`: written last, 3–6 sentences, no heading. What the reader will understand
       and which sections get them there.
 4. **Figures and code:** save as `imgs/<page>-<short-name>.png`. Put the script that makes a
    figure in `codes/`, and run it with `uv run python codes/<script>.py` if it needs only the

@@ -62,11 +62,9 @@ def build(topic: Topic, settings: Settings, style: str | None = None, html: bool
     if style not in styles():
         raise TutorError(f"Unknown style '{style}'. Available: {', '.join(styles())}")
     order = topic.order()
-    if not order:
-        raise TutorError("topic.yaml has no `order`. Run `uv run tutor order <topic> --reset`.")
     missing = [p for p in order if not (topic.path / p).is_file()]
     if missing:
-        raise TutorError(f"order lists missing pages: {missing}. Run `uv run tutor lint`.")
+        raise TutorError(f"missing pages: {missing}. Run `uv run tutor lint`.")
 
     meta = settings.pandoc_metadata()
     tmeta = topic.meta()

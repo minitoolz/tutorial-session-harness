@@ -1,6 +1,6 @@
 # tutor: co-write tutorials with a coding agent
 
-You learn a topic by writing a paper-style tutorial (abstract, intro, contents, glossary) together with a
+You learn a topic by writing a paper-style tutorial (abstract, intro, section pages listed in an index, glossary) together with a
 coding agent. Pages are Markdown with LaTeX math and inline HTML, and they render to PDF with
 Pandoc + XeLaTeX.
 

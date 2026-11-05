@@ -7,7 +7,7 @@ Format (pandoc definition list):
 
 Logit
 :   The raw score a model gives a class before softmax. Not a probability.
-    First defined in contents.md, "Definition".
+    First defined in logits.md.
 
 Optional English alias for non-English entries:  어텐션 (attention)
 -->
