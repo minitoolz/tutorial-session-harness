@@ -14,6 +14,7 @@ MD_IMG_RE = re.compile(r"!\[[^\]]*\]\(\s*<?([^)\s>]+)")
 HTML_SRC_RE = re.compile(r"""\bsrc\s*=\s*["']([^"']+)["']""")
 LINK_RE = re.compile(r"(?<!!)\[[^\]]*\]\(\s*<?([^)\s>]+)")
 INCLUDE_RE = re.compile(r"""\binclude\s*=\s*["']([^"']+)["']""")
+NOTE_MARK_RE = re.compile(r"^(\\\*|※)")  # a paragraph that opens with an escaped * or ※ is a side note
 BARE_ENV_RE = re.compile(r"^\s*\\begin\{(equation|align|gather|multline|flalign|alignat|eqnarray)\*?\}")
 
 
@@ -72,6 +73,17 @@ def _math_balance(page: str, text: str) -> list[Issue]:
             issues.append(Issue("error", page, i, "unbalanced inline math '$' on this line"))
     if dollars_open_at:
         issues.append(Issue("error", page, dollars_open_at, "display math '$$' opened but never closed"))
+    return issues
+
+
+def _notes(page: str, text: str) -> list[Issue]:
+    """Side notes (paragraphs opened by an escaped * or ※) must be `>` notes."""
+    issues, prev_blank = [], True
+    for ln in mdscan.scan(text):
+        if prev_blank and ln.kind == "prose" and not ln.quote and NOTE_MARK_RE.match(ln.text.strip()):
+            issues.append(Issue("warning", page, ln.no,
+                                "side note outside a '>' block; start every line of the note with '>'"))
+        prev_blank = ln.kind == "blank"
     return issues
 
 
@@ -216,6 +228,7 @@ def lint(topic: Topic) -> list[Issue]:
                     issues.append(Issue("warning", page, line,
                                         f"image '{ref}' is used in {page} but named for another page"))
         issues.extend(_math_balance(page, text))
+        issues.extend(_notes(page, text))
 
     for f in img_files:
         rel = f.relative_to(p).as_posix()

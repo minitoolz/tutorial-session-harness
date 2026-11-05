@@ -84,6 +84,14 @@ relation ("is based on", "consists of", "is measured by") that the subject reall
 `subject → complement`. Read each pair and ask: can this subject really BE this complement?
 The list is an aid, not a verdict: it cannot judge meaning, and it misses non-copula slips.
 
+### Side notes
+
+Background the reader may skip, such as what a tool or term used in passing is, goes in a note
+so it doesn't break the main line. A note is a blockquote: **every line starts with `>`**, and the
+PDF draws it as a shaded box. Mark the term it explains with `\*` and start the note with
+`> \* ` (AGENTS.md §4). A note follows the same writing rules as the body. Keep it short; a
+recap the reader needs to follow the section is a subsection, not a note.
+
 ## 3. Short dependency chains
 
 - **Define before use.** Every term and symbol is explained at or before its first appearance in

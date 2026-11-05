@@ -153,6 +153,14 @@ Fine-tuning
   instead. Cite a captioned diagram as `Figure \ref{fig:pipeline}`. Diagrams
   are cached in `build/mermaid/`. The VS Code preview needs the "Markdown Preview Mermaid
   Support" extension to show them.
+- **Notes:** a side note the reader may skip (background on a term used in passing, a footnote-like
+  aside) is a blockquote, and **every line of it starts with `>`**. The build draws it as a shaded
+  box. To point to it from the text, put `\*` after the term (`Perlin noise\*를`) and start the
+  note with `> \* `. `tutor lint` warns when a `\*`/`※` note is written without `>`.
+  ```
+  > \* <dfn>Perlin noise</dfn>는 격자점마다 무작위 gradient를 정하고 그 사이를 보간한 noise다.
+  > 그래서 가까운 pixel끼리 값이 비슷하다.
+  ```
 - HTML that survives into the PDF: `<img src width>`, `<figure>`/`<figcaption>`, `<table>` (math and
   **markdown** inside cells work), `<sub>`, `<sup>`, `<br>`, `<details>`/`<summary>` (printed
   expanded), `<dfn>`. Prefer markdown syntax when it exists.

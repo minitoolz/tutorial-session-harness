@@ -304,6 +304,42 @@ def test_review_agreement_lists_copula_pairs(topic, capsys):
     assert "[long-sentence]" not in o  # the audit replaces the normal review output
 
 
+NOTE_PAGE = ("# D\n\nDRAEM uses Perlin noise\\* masks.\n\n"
+             "> \\* Perlin noise is smooth random noise. So nearby pixels get similar values.\n")
+
+
+def test_note_outside_quote_is_flagged(topic, capsys):
+    (topic / "definition.md").write_text(NOTE_PAGE.replace("> ", ""), encoding="utf-8")
+    main(["lint", "demo"])
+    assert "side note outside a '>' block" in out(capsys)
+    (topic / "definition.md").write_text(NOTE_PAGE, encoding="utf-8")
+    main(["lint", "demo"])
+    assert "side note outside" not in out(capsys)
+
+
+def test_note_is_read_as_prose(topic, capsys):
+    (topic / "definition.md").write_text(
+        "# D\n\n> A note opens here. Objects rotate in many datasets. Memory banks grow large.\n",
+        encoding="utf-8",
+    )
+    main(["review", "demo", "definition.md"])
+    assert "[low-cohesion]" in out(capsys)  # the '>' marker does not hide note text from review
+
+
+def test_note_renders_as_box(topic):
+    import subprocess
+
+    (topic / "definition.md").write_text(NOTE_PAGE, encoding="utf-8")
+    run = lambda fmt: subprocess.run(  # noqa: E731
+        [build_mod.pandoc_bin(), "definition.md", "-f", "markdown", "-t", fmt,
+         "--lua-filter", str(build_mod.data_path("pandoc", "html2latex.lua"))],
+        cwd=topic, capture_output=True, text=True, check=True,
+    ).stdout
+    tex = run("latex")
+    assert "\\begin{tutornote}" in tex and "\\end{tutornote}" in tex and "\\begin{quote}" not in tex
+    assert '<div class="note">' in run("html")
+
+
 def test_review_undefined_term(topic, capsys):
     (topic / "intro.md").write_text("# Intro\n\nWe use the logit a lot.\n", encoding="utf-8")
     main(["review", "demo"])

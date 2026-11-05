@@ -25,6 +25,7 @@ class Line:
     no: int          # 1-based line number
     text: str
     kind: str        # prose | heading | table | list | blank
+    quote: bool = False  # inside a `>` note; `text` has the markers stripped
 
 
 def scan(text: str) -> Iterator[Line]:
@@ -63,16 +64,20 @@ def scan(text: str) -> Iterator[Line]:
             if not MATH_ENV_END.search(s):
                 in_env = True
             continue
+        quote = s.startswith(">")
+        if quote:
+            raw = re.sub(r"^\s*(>\s?)+", "", raw)
+            s = raw.strip()
         if not s:
-            yield Line(i, raw, "blank")
+            yield Line(i, raw, "blank", quote)
         elif s.startswith("#"):
-            yield Line(i, raw, "heading")
+            yield Line(i, raw, "heading", quote)
         elif s.startswith("|"):
-            yield Line(i, raw, "table")
+            yield Line(i, raw, "table", quote)
         elif re.match(r"^([-*+]|\d+[.)])\s", s):
-            yield Line(i, raw, "list")
+            yield Line(i, raw, "list", quote)
         else:
-            yield Line(i, raw, "prose")
+            yield Line(i, raw, "prose", quote)
 
 
 def strip_inline(s: str, keep_math: bool = False) -> str:

@@ -18,3 +18,8 @@
 \usepackage{parskip}
 \usepackage{framed}
 \renewenvironment{quote}{\begin{leftbar}}{\end{leftbar}}
+% Side notes: every `>` blockquote becomes a tutornote box (see html2latex.lua).
+\usepackage[most]{tcolorbox}
+\newtcolorbox{tutornote}{enhanced, breakable, colback=black!4, colframe=black!40,
+  boxrule=0pt, leftrule=2.5pt, arc=0pt, outer arc=0pt, left=8pt, right=8pt, top=4pt, bottom=4pt,
+  before skip=10pt, after skip=10pt, fontupper=\small}

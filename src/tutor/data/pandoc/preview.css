@@ -18,3 +18,8 @@ pre { overflow-x: auto; padding: 0.8rem; border-radius: 6px;
       background: color-mix(in srgb, CanvasText 6%, Canvas); }
 code { font-size: 0.92em; }
 math[display="block"] { overflow-x: auto; overflow-y: hidden; }
+.note { margin: 1.2rem 0; padding: 0.5rem 0.9rem; font-size: 0.93em;
+        border-left: 3px solid color-mix(in srgb, CanvasText 40%, transparent);
+        background: color-mix(in srgb, CanvasText 4%, Canvas); }
+.note > :first-child { margin-top: 0; }
+.note > :last-child { margin-bottom: 0; }

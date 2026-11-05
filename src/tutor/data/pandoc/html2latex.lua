@@ -18,6 +18,9 @@ It renders mermaid diagrams (```mermaid or ```{.mermaid #fig:id caption="..." wi
 to an image with mermaid-cli: PDF for LaTeX, SVG for HTML. `tutor build` passes the
 mmdc path in TUTOR_MMDC and the cache folder in TUTOR_MERMAID_DIR.
 
+It renders every `>` blockquote as a side note: a `tutornote` box in LaTeX (defined in each
+style) and a `<div class="note">` in the HTML preview.
+
 It also implements code includes:
   ```{.python include="codes/softmax.py" lines="3-20"}
   ```
@@ -370,9 +373,22 @@ local function code_include(cb)
   return cb
 end
 
+-- `>` blockquotes are side notes (the reader may skip them), drawn as a box.
+local function note(bq)
+  if is_latex then
+    local out = { pandoc.RawBlock("latex", "\\begin{tutornote}") }
+    for _, b in ipairs(bq.content) do out[#out + 1] = b end
+    out[#out + 1] = pandoc.RawBlock("latex", "\\end{tutornote}")
+    return out
+  elseif is_html then
+    return pandoc.Div(bq.content, pandoc.Attr("", { "note" }))
+  end
+end
+
 return {
   { CodeBlock = function(cb) return mermaid(cb) or code_include(cb) end },
   { Inlines = fix_inlines },
   { Blocks = fix_blocks },
   { Math = display_math }, -- after fix_blocks, so math restored from HTML is covered too
+  { BlockQuote = note },
 }
