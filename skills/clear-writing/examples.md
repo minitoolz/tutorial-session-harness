@@ -68,3 +68,21 @@ and the gain drops to about 1.2×.")
 **After**
 
 > 학습 중에 버그를 만났다. 이 모델은 파라미터가 많아서 디버깅이 어렵다.
+
+## Unlinked short sentences
+
+**Before** (each sentence is fine alone, but the reader can't tell how they relate)
+
+> PaDiM은 위치마다 Gaussian을 추정한다.
+> 물체가 회전하면 정상도 이상으로 보인다.
+> PatchCore는 위치를 버린다.
+> Memory bank는 크다.
+
+**After** (each connective states the relation; finding none for "Memory bank는 크다" showed
+it belonged to the next paragraph, after the memory bank is introduced)
+
+> PaDiM은 위치마다 Gaussian을 추정한다.
+> 그래서 같은 위치에 같은 부위가 온다고 가정한다.
+> 이 가정 때문에 물체가 회전하면 정상도 이상으로 보인다.
+>
+> 반면 PatchCore는 위치를 버리고, 학습 patch 전체를 하나의 memory bank에 넣는다.

@@ -166,6 +166,8 @@ Logit
 
 - Write for the reader in SETTINGS.md `audience`. Whether a term is fine depends on *their* field.
 - One idea per sentence and short paragraphs. Define terms before using them, and keep dependency chains short.
+- Link each sentence to the one before with a connective (so, but, for example, 그래서, 반면) or a
+  reference back. If no connective fits, the sentences aren't cohesive: restructure, don't pad.
 - Name compared things by what they are (`E-conv`, `E-transformer`), never `E1/E2/E3`.
 - No defensive hedging or self-protective disclaimers.
 - Natural phrasing in the target language: no translationese and no made-up idioms.

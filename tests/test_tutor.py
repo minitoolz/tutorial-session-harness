@@ -246,6 +246,30 @@ def test_review_flags_each_problem(topic, capsys):
     assert main(["review", "demo", "definition.md", "--strict"]) == 1
 
 
+UNLINKED = "# D\n\nPaDiM fits a Gaussian per position. Objects rotate in many datasets. PatchCore drops position. Memory banks grow large.\n"
+LINKED = ("# D\n\nPaDiM fits a Gaussian per position. So it assumes aligned objects. "
+          "However, objects rotate in many datasets. For example, screws lie at random angles.\n")
+LINKED_KO = ("# D\n\nPaDiM은 위치마다 Gaussian을 추정한다. 그래서 정렬된 물체를 가정한다. "
+             "반면 PatchCore는 위치를 버린다. 이 방식은 회전한 물체에도 맞는다.\n")
+
+
+@pytest.mark.parametrize("text, flagged", [(UNLINKED, True), (LINKED, False), (LINKED_KO, False)])
+def test_review_low_cohesion(topic, capsys, text, flagged):
+    (topic / "definition.md").write_text(text, encoding="utf-8")
+    main(["review", "demo", "definition.md"])
+    assert ("[low-cohesion]" in out(capsys)) is flagged
+
+
+def test_review_low_cohesion_can_be_disabled(ready, capsys):
+    write_settings(ready, extra="review:\n  max_unlinked_sentences: -1\n")
+    assert main(["start"]) == 0
+    assert main(["new", "demo"]) == 0
+    (ready / "topics" / "demo" / "intro.md").write_text(UNLINKED, encoding="utf-8")
+    capsys.readouterr()
+    main(["review", "demo", "intro.md"])
+    assert "[low-cohesion]" not in out(capsys)
+
+
 def test_review_undefined_term(topic, capsys):
     (topic / "intro.md").write_text("# Intro\n\nWe use the logit a lot.\n", encoding="utf-8")
     main(["review", "demo"])

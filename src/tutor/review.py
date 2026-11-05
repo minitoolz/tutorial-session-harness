@@ -1,7 +1,8 @@
 """Readability heuristics for tutorial prose (no LLM involved).
 
-Flags: long sentences, long paragraphs, phrase-list hits, defensive hedges,
-opaque index labels (E1/E2/E3), and terms used before they are defined.
+Flags: long sentences, long paragraphs, sentences not linked to the one before
+(no connective), phrase-list hits, defensive hedges, opaque index labels
+(E1/E2/E3), and terms used before they are defined.
 Phrase lists: skills/clear-writing/phrases.yaml + skills.local/**/phrases.yaml.
 """
 
@@ -25,7 +26,7 @@ LABEL_RE = re.compile(r"\b([A-Z][A-Za-z]{0,5})[-_]?(\d{1,2})\b")
 
 
 def load_rules(root: Path) -> dict:
-    rules: dict = {"phrases": [], "hedges": [], "label_allowlist": []}
+    rules: dict = {"phrases": [], "hedges": [], "connectives": [], "label_allowlist": []}
     files = [root / "skills" / "clear-writing" / "phrases.yaml"]
     local = root / "skills.local"
     if local.is_dir():
@@ -125,6 +126,46 @@ def _structure(page: str, text: str, limits: dict) -> list[Issue]:
     return issues
 
 
+def _compile(entries: list[dict]) -> list[re.Pattern]:
+    out = []
+    for e in entries:
+        try:
+            out.append(re.compile(e["pattern"], re.IGNORECASE))
+        except (re.error, KeyError, TypeError):
+            pass  # _pattern_hits already reports bad entries for phrases/hedges
+    return out
+
+
+def _cohesion(page: str, text: str, limits: dict, connectives: list[re.Pattern]) -> list[Issue]:
+    """Flag a paragraph where too many sentences in a row have no link to the one before.
+
+    A link is a connective ("so", "however", "그래서", "반면") or a reference back ("this",
+    "이 방법은"). A missing link usually means the two sentences are not cohesive: the fix is to
+    restructure (reorder, split the paragraph, add the missing step), not to paste in "또한".
+    """
+    issues = []
+    limit = limits["max_unlinked_sentences"]
+    if not connectives or limit is None or limit < 0:
+        return issues
+    for start, par in mdscan.paragraphs(text):
+        sents = _sentences(mdscan.strip_inline(par))
+        run: list[str] = []
+        for s in sents[1:]:
+            if any(rx.search(s) for rx in connectives):
+                run = []
+                continue
+            run.append(s)
+            if len(run) == limit + 1:
+                first = run[0] if len(run[0]) <= 50 else run[0][:47] + "..."
+                issues.append(Issue("warning", page, start,
+                                    f"[low-cohesion] {len(run)}+ sentences in a row with no link to the "
+                                    f"one before, from \"{first}\" — open each with a connective that "
+                                    f"states the relation (so / but / for example / 그래서 / 반면 / 예를 "
+                                    f"들어); if none fits, restructure the paragraph"))
+                break  # one flag per paragraph
+    return issues
+
+
 def _undefined_terms(topic: Topic, order: list[str]) -> list[Issue]:
     """A term marked as defined (<dfn> / first **bold**) must not appear earlier in reading order."""
     issues = []
@@ -156,6 +197,7 @@ def _undefined_terms(topic: Topic, order: list[str]) -> list[Issue]:
 def review(topic: Topic, settings: Settings, root: Path, only_page: str | None = None) -> list[Issue]:
     rules = load_rules(root)
     limits = settings.review_limits()
+    connectives = _compile(rules["connectives"])
     order = topic.order() or topic.pages()
     pages = [only_page] if only_page else order
     issues: list[Issue] = []
@@ -165,6 +207,7 @@ def review(topic: Topic, settings: Settings, root: Path, only_page: str | None =
             continue
         text = f.read_text(encoding="utf-8")
         issues += _structure(page, text, limits)
+        issues += _cohesion(page, text, limits, connectives)
         issues += _pattern_hits(page, text, rules["phrases"], "phrase")
         issues += _pattern_hits(page, text, rules["hedges"], "hedge")
         issues += _opaque_labels(page, text, rules["label_allowlist"])

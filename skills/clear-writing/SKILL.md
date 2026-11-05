@@ -36,6 +36,32 @@ Read `audience` in SETTINGS.md: `field`, `background`, `strong_in`, `weak_in`, `
 - **One topic per paragraph.** The first sentence says what the paragraph is about.
 - Prefer active voice with a clear subject: "The encoder maps..." rather than "A mapping is performed...".
 
+### Connect each sentence to the one before
+
+Short sentences in a row read like a list of facts unless the reader can see how each one
+follows from the last. A connective tells the reader what kind of sentence comes next, so they
+can predict it instead of working it out.
+
+- Open every sentence after the first in a paragraph with a link to the previous one:
+  - a connective that names the relation: result (so, 그래서, 따라서), contrast (but, however,
+    그러나, 반면), example (for example, 예를 들어), restatement (that is, 즉), sequence
+    (first/next/finally, 먼저/다음으로/마지막으로), condition (이때, 이 경우);
+  - or an explicit reference back: "This step...", "이 방법은", "두 값은";
+  - or a reason ending that explains the previous sentence: "~때문이다".
+- **Use the connective as a test.** Before writing a sentence, ask which connective joins it to
+  the one before. If none fits honestly, the two sentences are not cohesive, and adding a
+  connective would only hide that. Restructure instead:
+  - reorder so that each sentence builds on the previous one;
+  - move the sentence to the paragraph it belongs to, or start a new paragraph;
+  - add the missing step that makes the second sentence follow from the first.
+- Don't paste in an empty "also / 또한 / 그리고" to silence the check. The connective must state
+  the real relation; "또한" fits only when the sentence adds a parallel item.
+- Announce structure before it arrives: "두 가지를 바꿨다." followed by "첫째, …", "둘째, …"
+  lets the reader know how many items to expect.
+- `tutor review` flags `[low-cohesion]` when more than `review.max_unlinked_sentences`
+  sentences in a row have none of these links. The marker lists are `connectives:` in
+  `phrases.yaml` (extend them in `skills.local/clear-writing/phrases.yaml`).
+
 ## 3. Short dependency chains
 
 - **Define before use.** Every term and symbol is explained at or before its first appearance in

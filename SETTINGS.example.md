@@ -39,6 +39,7 @@ review:
   max_sentence_words: 25
   max_sentence_chars_cjk: 60
   max_paragraph_sentences: 5
+  max_unlinked_sentences: 1    # sentences in a row with no connective; -1 turns the check off
 ---
 
 # Preferences (free text — the agent reads all of this)

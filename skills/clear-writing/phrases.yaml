@@ -67,3 +67,22 @@ hedges:
 
 # Tokens that look like opaque index labels but are standard names.
 label_allowlist: [L0, L1, L2, F1, R2, H1, H2, H3, H4, H5, H6, T4, L4, A10, K80, P4, C4, S3, EC2, ISO27001, SHA2, MD5, IPv4, IPv6, UTF8, X11, Q4, D3]
+
+# Markers that link a sentence to the one before it (connectives, references back, reason
+# endings). `tutor review` flags a paragraph where more than `review.max_unlinked_sentences`
+# sentences in a row (after the first) match none of these: see clear-writing §2.
+# Patterns are matched against the whole sentence; anchor them with ^ or $.
+connectives:
+  - pattern: "^(so|thus|therefore|hence|as a result|because|but|however|yet|still|instead|in contrast|conversely|on the other hand|that is|in other words|for example|for instance|in particular|specifically|also|moreover|furthermore|in addition|first|second|third|next|then|finally|lastly|meanwhile|here|now|otherwise|similarly|likewise|in short|overall|together|to do this|in this case)\\b"
+    lang: en
+  - pattern: "^(this|these|that|those|such|it|its|they|their|both|each)\\b"
+    lang: en
+    why: "a reference back to the previous sentence"
+  - pattern: "^(그래서|따라서|그러므로|그 결과|이 때문에|그러나|하지만|그런데|반면|반대로|대신|즉|다시 말해|예를 들어|예컨대|특히|또한|또|게다가|더구나|먼저|우선|첫째|둘째|셋째|넷째|다음으로|이어서|그다음|마지막으로|끝으로|결국|요약하면|정리하면|이때|이 경우|이렇게|이처럼|그러면|그렇다면|한편|물론|실제로|구체적으로|여기서|이를 위해|그래도|그 대신)(?=[\\s,])"
+    lang: ko
+  - pattern: "^(이|그|이런|그런|이러한|그러한|이것|그것|이들|그들|이와|두|세|둘 다|모두)(?=[\\s은는이가을를의도])"
+    lang: ko
+    why: "a reference back to the previous sentence"
+  - pattern: "(때문이다|덕분이다|뜻이다|셈이다|까닭이다)[.!?]?$"
+    lang: ko
+    why: "the sentence explains the previous one"
