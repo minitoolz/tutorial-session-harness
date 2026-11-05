@@ -500,9 +500,20 @@ def test_table_font_header():
         build_mod.table_font_header("tiny")
 
 
+def test_table_spacing_and_padding_header():
+    hdr = build_mod.table_font_header("8pt", 0.95, "4pt")
+    assert "\\fontsize{8pt}{9.12pt}" in hdr
+    assert "height\\dimexpr.7\\baselineskip+4pt" in hdr and "depth\\dimexpr.3\\baselineskip+4pt" in hdr
+    assert "\\linespread{0.9}" in build_mod.table_font_header(None, 0.9, None)
+    with pytest.raises(Exception):
+        build_mod.table_font_header(None, None, "wide")
+    with pytest.raises(Exception):
+        build_mod.table_font_header(None, 0, None)
+
+
 @pytest.mark.skipif(not build_mod.xelatex_available(), reason="xelatex not installed")
 def test_build_pdf_with_table_font_size(ready, topic):
-    write_settings(ready, extra="tablefontsize: 8pt\n")
+    write_settings(ready, extra="tablefontsize: 8pt\ntablelinespacing: 0.95\ntablecellpadding: 4pt\n")
     assert main(["start"]) == 0
     (topic / "definition.md").write_text(
         "# Definition\n\n| a | b |\n|---|---|\n| 1 | 2 |\n", encoding="utf-8")

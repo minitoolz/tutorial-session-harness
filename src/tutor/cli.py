@@ -179,8 +179,10 @@ def cmd_settings(root, args) -> int:
         problems.append("xelatex not on PATH (install MacTeX / TeX Live)")
     if s.data.get("codefontsize") and not build_mod.CODE_FONTSIZE_RE.match(str(s.data["codefontsize"])):
         problems.append(f"codefontsize '{s.data['codefontsize']}' must be a point size such as 9pt")
-    if s.data.get("tablefontsize") and not build_mod.CODE_FONTSIZE_RE.match(str(s.data["tablefontsize"])):
-        problems.append(f"tablefontsize '{s.data['tablefontsize']}' must be a point size such as 8pt")
+    try:
+        build_mod.table_font_header(*(s.data.get(k) for k in build_mod.TABLE_KEYS))
+    except (build_mod.TutorError, ValueError) as e:
+        problems.append(str(e) if isinstance(e, build_mod.TutorError) else f"table settings: {e}")
     fonts = {k: s.data.get(k) for k in ("mainfont", "sansfont", "monofont", "mathfont", "CJKmainfont") if s.data.get(k)}
     if fonts:
         if shutil.which("fc-list"):

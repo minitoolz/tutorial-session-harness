@@ -25,6 +25,8 @@ style: article             # article | paper | notes   (src/tutor/data/pandoc/st
 fontsize: 11pt
 # codefontsize: 9pt        # code blocks only (default: same as the body)
 # tablefontsize: 8pt       # tables only (default: the style's own size)
+# tablelinespacing: 0.95   # line spacing inside a table cell, as a multiplier (default 1)
+# tablecellpadding: 4pt    # extra space above and below the text of each table cell
 papersize: a4
 geometry: margin=2.5cm
 linestretch: 1.25

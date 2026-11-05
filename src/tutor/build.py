@@ -90,14 +90,44 @@ def code_font_header(size: str) -> str:
     )
 
 
-def table_font_header(size: str) -> str:
-    """LaTeX that sets every table (pandoc emits longtable, Markdown and HTML alike) to `size`."""
-    font = _font_cmd("tablefontsize", size)
+TABLE_KEYS = ("tablefontsize", "tablelinespacing", "tablecellpadding")
+
+
+def table_font_header(size: str | None = None, linespacing: float | str | None = None,
+                      padding: str | None = None) -> str:
+    """LaTeX for every table (pandoc emits longtable, Markdown and HTML alike).
+
+    size:        font size, e.g. "8pt"
+    linespacing: multiplier on the line spacing inside a cell, e.g. 0.95
+    padding:     extra space above and below each cell's text, e.g. "4pt"
+    """
+    ls = float(linespacing) if linespacing not in (None, "") else 1.0
+    if ls <= 0:
+        raise TutorError(f"tablelinespacing '{linespacing}' must be a positive number such as 0.95")
+    cmds = []
+    if size:
+        m = CODE_FONTSIZE_RE.match(str(size))
+        if not m:
+            raise TutorError(f"tablefontsize '{size}' must be a point size such as 8pt")
+        pt = float(m.group(1))
+        cmds.append(f"\\fontsize{{{pt:g}pt}}{{{round(pt * 1.2 * ls, 3):g}pt}}\\selectfont")
+    elif ls != 1.0:
+        cmds.append(f"\\linespread{{{ls:g}}}\\selectfont")
+    if padding:
+        m = CODE_FONTSIZE_RE.match(str(padding))
+        if not m:
+            raise TutorError(f"tablecellpadding '{padding}' must be a length such as 4pt")
+        pad = f"{float(m.group(1)):g}pt"
+        # array/longtable size each row from \strutbox: a taller, deeper strut pads every cell
+        # above its first line and below its last, without touching the lines in between.
+        cmds.append(f"\\setbox\\strutbox\\hbox{{\\vrule height\\dimexpr.7\\baselineskip+{pad}\\relax"
+                    f" depth\\dimexpr.3\\baselineskip+{pad}\\relax width0pt}}")
+    body = "".join(cmds)
     return (
-        "% tablefontsize from SETTINGS.md\n"
+        "% tablefontsize / tablelinespacing / tablecellpadding from SETTINGS.md\n"
         "\\usepackage{etoolbox}\n"
-        f"\\AtBeginEnvironment{{longtable}}{{{font}}}\n"
-        f"\\AtBeginEnvironment{{tabular}}{{{font}}}\n"
+        f"\\AtBeginEnvironment{{longtable}}{{{body}}}\n"
+        f"\\AtBeginEnvironment{{tabular}}{{{body}}}\n"
     )
 
 
@@ -205,10 +235,11 @@ def build(topic: Topic, settings: Settings, style: str | None = None, html: bool
             code_hdr = topic.build_dir / "codefont.tex"
             code_hdr.write_text(code_font_header(settings.data["codefontsize"]), encoding="utf-8")
             cmd += ["-H", str(code_hdr)]
-        if settings.data.get("tablefontsize"):
+        if any(settings.data.get(k) for k in TABLE_KEYS):
             topic.build_dir.mkdir(exist_ok=True)
             table_hdr = topic.build_dir / "tablefont.tex"
-            table_hdr.write_text(table_font_header(settings.data["tablefontsize"]), encoding="utf-8")
+            table_hdr.write_text(table_font_header(*(settings.data.get(k) for k in TABLE_KEYS)),
+                                 encoding="utf-8")
             cmd += ["-H", str(table_hdr)]
 
     env = tex_env()
