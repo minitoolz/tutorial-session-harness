@@ -31,8 +31,10 @@ Read `audience` in SETTINGS.md: `field`, `background`, `strong_in`, `weak_in`, `
 
 - **One idea per sentence.** Split a sentence when it has two "and/which/so" clauses carrying new
   information.
-- Default limits (from `review:` in SETTINGS.md): about 25 words per English sentence, about 60
+- Default limits (from `review:` in SETTINGS.md): about 50 words per English sentence, about 120
   characters per Korean/Japanese/Chinese sentence, and at most 5 sentences per paragraph.
+  The sentence limits are a ceiling, not a target. They leave room for a sentence to carry its
+  connective and a short reason ("A이므로 B다"), not for packing in a second new idea.
 - **One topic per paragraph.** The first sentence says what the paragraph is about.
 - Prefer active voice with a clear subject: "The encoder maps..." rather than "A mapping is performed...".
 

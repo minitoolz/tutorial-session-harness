@@ -224,7 +224,7 @@ def test_glossary_consistency(topic, capsys):
 
 BAD = """# Bad
 
-Since the normalizer couples every logit which means the gradient of each output with respect to any input involves all of the others as discussed above, temperature scaling changes the effective learning rate.
+Since the normalizer couples every logit which means the gradient of each output with respect to any input involves all of the others as discussed above, temperature scaling, which divides every logit by a single positive number before the exponential is taken, changes not only the entropy of the output distribution but also the effective learning rate of all the upstream layers.
 
 학습 중에 버그를 밟았다. These results were measured on the host machine and may not apply to other GPUs.
 
@@ -244,6 +244,13 @@ def test_review_flags_each_problem(topic, capsys):
         assert tag in o, tag
     assert "L1" not in o and "A100" not in o
     assert main(["review", "demo", "definition.md", "--strict"]) == 1
+
+
+def test_review_sentence_limit_allows_moderate_sentences(topic, capsys):
+    words = " ".join(["word"] * 40)
+    (topic / "definition.md").write_text(f"# D\n\nA {words}.\n", encoding="utf-8")
+    main(["review", "demo", "definition.md"])
+    assert "[long-sentence]" not in out(capsys)  # 41 words is under the default of 50
 
 
 UNLINKED = "# D\n\nPaDiM fits a Gaussian per position. Objects rotate in many datasets. PatchCore drops position. Memory banks grow large.\n"

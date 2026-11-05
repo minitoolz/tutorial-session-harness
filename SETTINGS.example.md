@@ -36,8 +36,8 @@ colorlinks: true
 
 # ── Readability limits used by `tutor review` (optional) ─────────────────────
 review:
-  max_sentence_words: 25
-  max_sentence_chars_cjk: 60
+  max_sentence_words: 50
+  max_sentence_chars_cjk: 120
   max_paragraph_sentences: 5
   max_unlinked_sentences: 1    # sentences in a row with no connective; -1 turns the check off
 ---

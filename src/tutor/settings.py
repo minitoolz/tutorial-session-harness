@@ -29,8 +29,8 @@ PANDOC_KEYS = (
 )
 
 REVIEW_DEFAULTS = {
-    "max_sentence_words": 25,       # latin-script sentences
-    "max_sentence_chars_cjk": 60,   # CJK sentences, non-space characters
+    "max_sentence_words": 50,       # latin-script sentences
+    "max_sentence_chars_cjk": 120,  # CJK sentences, non-space characters
     "max_paragraph_sentences": 5,
     "max_unlinked_sentences": 1,    # sentences in a row with no connective (see review._cohesion)
 }
