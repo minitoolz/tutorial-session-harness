@@ -1,6 +1,15 @@
 % style: article — clean single-column tutorial (default)
 \usepackage{mathtools}
-\usepackage{bm}
+% Bold math. Pandoc's XeLaTeX template loads unicode-math, which breaks bm's \bm and
+% amsmath's \boldsymbol on Greek letters ("Improper alphabetic constant") and makes
+% \mathbf drop Greek glyphs. Route all three through unicode-math's math-font alphabets.
+\makeatletter
+\@ifpackageloaded{unicode-math}{%
+  \unimathsetup{mathbf=sym}%
+  \DeclareRobustCommand{\bm}[1]{\symbfit{#1}}%
+  \DeclareRobustCommand{\boldsymbol}[1]{\symbfit{#1}}%
+}{\usepackage{bm}}
+\makeatother
 \usepackage{float}
 \floatplacement{figure}{H}
 \usepackage[font=small,labelfont=bf]{caption}
