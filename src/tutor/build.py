@@ -70,19 +70,34 @@ def mmdc_bin() -> str | None:
 CODE_FONTSIZE_RE = re.compile(r"^\s*(\d+(?:\.\d+)?)\s*pt\s*$")
 
 
-def code_font_header(size: str) -> str:
-    """LaTeX that sets code blocks (highlighted and plain) to `size`, e.g. "9pt"."""
+def _font_cmd(key: str, size: str) -> str:
     m = CODE_FONTSIZE_RE.match(str(size))
     if not m:
-        raise TutorError(f"codefontsize '{size}' must be a point size such as 9pt")
+        raise TutorError(f"{key} '{size}' must be a point size such as 9pt")
     pt = float(m.group(1))
-    font = f"\\fontsize{{{pt:g}pt}}{{{pt * 1.2:g}pt}}\\selectfont"
+    return f"\\fontsize{{{pt:g}pt}}{{{pt * 1.2:g}pt}}\\selectfont"
+
+
+def code_font_header(size: str) -> str:
+    """LaTeX that sets code blocks (highlighted and plain) to `size`, e.g. "9pt"."""
+    font = _font_cmd("codefontsize", size)
     return (
         "% codefontsize from SETTINGS.md\n"
         "\\usepackage{fancyvrb}\n"
         f"\\fvset{{fontsize={font}}}\n"            # highlighted blocks (Shaded/Highlighting)
         "\\usepackage{etoolbox}\n"
         f"\\AtBeginEnvironment{{verbatim}}{{{font}}}\n"  # blocks without a language
+    )
+
+
+def table_font_header(size: str) -> str:
+    """LaTeX that sets every table (pandoc emits longtable, Markdown and HTML alike) to `size`."""
+    font = _font_cmd("tablefontsize", size)
+    return (
+        "% tablefontsize from SETTINGS.md\n"
+        "\\usepackage{etoolbox}\n"
+        f"\\AtBeginEnvironment{{longtable}}{{{font}}}\n"
+        f"\\AtBeginEnvironment{{tabular}}{{{font}}}\n"
     )
 
 
@@ -190,6 +205,11 @@ def build(topic: Topic, settings: Settings, style: str | None = None, html: bool
             code_hdr = topic.build_dir / "codefont.tex"
             code_hdr.write_text(code_font_header(settings.data["codefontsize"]), encoding="utf-8")
             cmd += ["-H", str(code_hdr)]
+        if settings.data.get("tablefontsize"):
+            topic.build_dir.mkdir(exist_ok=True)
+            table_hdr = topic.build_dir / "tablefont.tex"
+            table_hdr.write_text(table_font_header(settings.data["tablefontsize"]), encoding="utf-8")
+            cmd += ["-H", str(table_hdr)]
 
     env = tex_env()
     if uses_mermaid(topic, order):

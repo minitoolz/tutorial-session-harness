@@ -24,6 +24,7 @@ author: ""                 # default author for new topics
 style: article             # article | paper | notes   (src/tutor/data/pandoc/styles/)
 fontsize: 11pt
 # codefontsize: 9pt        # code blocks only (default: same as the body)
+# tablefontsize: 8pt       # tables only (default: the style's own size)
 papersize: a4
 geometry: margin=2.5cm
 linestretch: 1.25

@@ -208,7 +208,8 @@ local function html_inline(html)
   return pandoc.utils.blocks_to_inlines(blocks)
 end
 
-local function fix_inlines(inlines)
+local fix_inlines
+fix_inlines = function(inlines)
   local out = pandoc.Inlines({})
   local i = 1
   while i <= #inlines do
@@ -225,6 +226,12 @@ local function fix_inlines(inlines)
         local j = find_close(inlines, i, name, "RawInline")
         if not j then
           i = i + 1
+        elseif name == "dfn" then
+          -- a defined term: bold, like **term** (the other form the review accepts)
+          local inner = pandoc.Inlines({})
+          for k = i + 1, j - 1 do inner:insert(inlines[k]) end
+          out:insert(pandoc.Strong(fix_inlines(inner)))
+          i = j + 1
         else
           local slice = pandoc.Inlines({})
           for k = i, j do slice:insert(inlines[k]) end

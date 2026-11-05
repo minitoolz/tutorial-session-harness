@@ -493,6 +493,23 @@ def test_build_pdf_with_code_font_size(ready, topic):
     assert "9pt" in (topic / "build" / "codefont.tex").read_text(encoding="utf-8")
 
 
+def test_table_font_header():
+    hdr = build_mod.table_font_header("8pt")
+    assert "\\AtBeginEnvironment{longtable}{\\fontsize{8pt}{9.6pt}\\selectfont}" in hdr
+    with pytest.raises(Exception):
+        build_mod.table_font_header("tiny")
+
+
+@pytest.mark.skipif(not build_mod.xelatex_available(), reason="xelatex not installed")
+def test_build_pdf_with_table_font_size(ready, topic):
+    write_settings(ready, extra="tablefontsize: 8pt\n")
+    assert main(["start"]) == 0
+    (topic / "definition.md").write_text(
+        "# Definition\n\n| a | b |\n|---|---|\n| 1 | 2 |\n", encoding="utf-8")
+    assert main(["build", "demo"]) == 0
+    assert "8pt" in (topic / "build" / "tablefont.tex").read_text(encoding="utf-8")
+
+
 def test_build_without_mmdc_explains_install(topic, capsys, monkeypatch):
     _add_mermaid_page(topic)
     monkeypatch.setattr(build_mod, "mmdc_bin", lambda: None)

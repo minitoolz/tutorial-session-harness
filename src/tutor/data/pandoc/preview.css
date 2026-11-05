@@ -23,3 +23,6 @@ math[display="block"] { overflow-x: auto; overflow-y: hidden; }
         background: color-mix(in srgb, CanvasText 4%, Canvas); }
 .note > :first-child { margin-top: 0; }
 .note > :last-child { margin-bottom: 0; }
+
+/* defined terms: bold, as in the PDF */
+dfn { font-style: normal; font-weight: bold; }
