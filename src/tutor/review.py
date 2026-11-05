@@ -201,8 +201,9 @@ def _undefined_terms(topic: Topic, order: list[str]) -> list[Issue]:
 # Subject-predicate agreement audit. Whether "A는 B다" makes sense (a decision is not a distance)
 # is a question of meaning that no regex can answer, so this only lists the copula sentences
 # ("A is B") for the writer to check one by one; it raises no warnings.
-KO_SUBJ_RE = re.compile(r"(?:^|\s)([^\s,()]+?)(?:은|는)(?=\s)")
-KO_SUBJ_SKIP_RE = re.compile(r"(에서|에게|에도|에|으로|로|까지|부터|보다|처럼)$")
+HANGUL_RE = re.compile(r"[가-힣]")
+KO_SUBJ_RE = re.compile(r"(?:^|\s)([^\s,()]+?)\)?(?:은|는)(?=\s)")
+KO_SUBJ_SKIP_RE = re.compile(r"(에서|에게|에도|에|으로|로|까지|부터|보다|처럼|하|되|있|없|않)$")  # locatives, verb adnominals
 KO_COPULA_RE = re.compile(
     r"([^\s,()]+?(?:이다|이므로|이고|이며|이지만|인데|였다|이었다|이라서|이라))(?=[\s,.]|$)"
     r"|([A-Za-z0-9%)\]]+(?:다|였다|므로|이므로|고|며|지만|인데))(?=[\s,.]|$)"
@@ -226,7 +227,7 @@ def agreement_pairs(topic: Topic, only_page: str | None = None) -> list[Issue]:
                 continue
             for s in _sentences(mdscan.strip_inline(par)):
                 pair = None
-                if _is_cjk(s):
+                if HANGUL_RE.search(s):  # mixed Korean/English sentences are Korean here
                     for ms in KO_SUBJ_RE.finditer(s):
                         subj = ms.group(1).strip("*")
                         if KO_SUBJ_SKIP_RE.search(subj) or (len(subj) == 1 and CJK_RE.match(subj)):
