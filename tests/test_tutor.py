@@ -340,6 +340,32 @@ def test_html_survives_into_latex(topic):
     assert "\\[\\begin{align}" not in tex and "\\begin{equation}\n\\begin{align}" not in tex
 
 
+@pytest.mark.skipif(not build_mod.xelatex_available(), reason="xelatex not installed")
+def test_refs_survive_inside_html_blocks(tmp_path):
+    import subprocess
+
+    (tmp_path / "page.md").write_text(
+        "$$ x = 1 \\label{eq:a} $$\n\n"
+        "<figure>\n<img src=\"imgs/x.png\" width=\"100%\">\n"
+        "<figcaption>식 \\eqref{eq:a}의 flow, $y$, 그림 \\ref{fig:b}.</figcaption>\n</figure>\n\n"
+        "<table><tr><td>see \\eqref{eq:a}</td></tr></table>\n",
+        encoding="utf-8",
+    )
+
+    def run(fmt):
+        return subprocess.run(
+            [build_mod.pandoc_bin(), "page.md", "-f", "markdown", "-t", fmt,
+             "--lua-filter", str(build_mod.data_path("pandoc", "html2latex.lua"))],
+            cwd=tmp_path, capture_output=True, text=True, check=True,
+        ).stdout
+
+    tex = run("latex")
+    assert "\\caption{식 \\eqref{eq:a}의 flow, \\(y\\), 그림 \\ref{fig:b}.}" in tex
+    assert "see \\eqref{eq:a}" in tex
+    html = run("html")  # preview: refs show as plain text, no crash
+    assert "식 (eq:a)의 flow" in html and "see (eq:a)" in html
+
+
 MERMAID_PAGE = (
     "# Flow\n\nThe pipeline:\n\n"
     "```{.mermaid #fig:flow caption=\"Inspection flow\" width=\"60%\"}\n"

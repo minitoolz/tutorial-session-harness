@@ -69,15 +69,28 @@ local function placeholder_block(name)
     "\\begin{center}\\fbox{\\emph{[" .. name .. " omitted in PDF]}}\\end{center}")
 end
 
--- Math survives the HTML round-trip as opaque placeholders.
+-- Math and raw TeX (\eqref{..}, \ref{..}, ...) survive the HTML round-trip as
+-- opaque placeholders; the HTML writer would otherwise drop raw TeX silently.
 local math_store = {}
 local MARK = "TUTORMATH"
 
+local function is_tex(raw)
+  return raw.format == "tex" or raw.format == "latex"
+end
+
+local function stash(inline)
+  math_store[#math_store + 1] = inline
+  return pandoc.Str(MARK .. #math_store .. "Z")
+end
+
 local function protect_math(el)
   return el:walk({
-    Math = function(m)
-      math_store[#math_store + 1] = m
-      return pandoc.Str(MARK .. #math_store .. "Z")
+    Math = stash,
+    RawInline = function(r)
+      if is_tex(r) then return stash(r) end
+    end,
+    RawBlock = function(r)
+      if is_tex(r) then return pandoc.Plain({ stash(pandoc.RawInline("latex", r.text)) }) end
     end,
   })
 end
