@@ -2,7 +2,8 @@
 
 Flags: long sentences, long paragraphs, sentences not linked to the one before
 (no connective), phrase-list hits, defensive hedges, opaque index labels
-(E1/E2/E3), and terms used before they are defined.
+(E1/E2/E3), terms used before they are defined, and single-letter math
+symbols a section uses without ever saying what they are.
 Phrase lists: skills/clear-writing/phrases.yaml + skills.local/**/phrases.yaml.
 """
 
@@ -249,6 +250,104 @@ def agreement_pairs(topic: Topic, only_page: str | None = None) -> list[Issue]:
     return out
 
 
+# Single-letter symbols ($\tau$, $K$, $\mathbf{x}$) must be explained at least once in the
+# section page that uses them, so a reader who jumps into the section can read it alone.
+# "Explained" is judged from the words around the math span:
+#   threshold $\tau$ / 대문자($\mathbf{I}$)      a noun right before it (apposition)
+#   $K$는 ... / $\mu$과 $\sigma$은 ...           the symbol is the topic of the sentence
+#   ...를 $\mathbf{m}_i$, ...를 $\bar m$라 하자    named in a "let ... be" sentence
+#   $k$번째 / $K$개 / $n$차원 / $H \times W$ 크기   a counting or size word right after it
+#   크기는 $H \times W \times d$이다               it is the value of a described quantity
+_GREEK = ("alpha beta gamma delta epsilon varepsilon zeta eta theta vartheta iota kappa lambda mu nu "
+          "xi rho sigma tau upsilon phi varphi chi psi omega Gamma Delta Theta Lambda Xi Pi Sigma Phi "
+          "Psi Omega").split()
+_DECOR = r"(?:mathbf|boldsymbol|bm|symbf|hat|bar|tilde|mathcal|vec|mathit)"
+_ATOM_RE = re.compile(
+    r"\\" + _DECOR + r"\{\s*(?:\\[A-Za-z]+|[A-Za-z])\s*\}"
+    r"|\\(?:" + "|".join(_GREEK) + r")(?![A-Za-z])"
+    r"|(?<![\\A-Za-z])[A-Za-z](?![A-Za-z])")
+_MATH_DROP_RE = re.compile(r"\\(?:text|operatorname|mathrm|mathbb|label|eqref|ref)\{[^{}]*\}")
+_SUBSUP_RE = re.compile(r"[_^](?:\{(?:[^{}]|\{[^{}]*\})*\}|\\[A-Za-z]+|.)")
+_SIMPLE_REST_RE = re.compile(r"^(?:[\s,()\d]|\\times|\\dots|\\ldots|\\cdots|\;|\\,)*$")
+_PARTICLE_END_RE = re.compile(r"(은|는|이|가|을|를|에|의|로|와|과|도|만|면|고|며|서|며)$")
+_PREV_WORD_RE = re.compile(r"([A-Za-z가-힣][\w가-힣\-]*)\s?\(?$")
+_PREV_STOP = {"이때", "여기서", "또", "즉", "그리고", "반면", "및", "또는", "그래서", "따라서", "다만",
+              "먼저", "이", "그", "예", "예를", "들어", "그러면", "만약", "각각", "모두"}
+_NAMING_RE = re.compile(r"^(?:이?라\s*(?:하|부르|두|고)|로\s*(?:쓰|쓴|두|둔|표기|나타))")
+_COUNT_RE = re.compile(r"^\s?(?:번째|개|차원|크기|배|장|단계|번)")
+_CHAIN_RE = re.compile(r"^\s*(?:과|와|,)\s*$")
+
+
+def _symbol_atoms(tex: str) -> tuple[list[str], bool]:
+    """Single-letter symbols in a math span (sub/superscripts dropped), and whether the span
+    is just those symbols (a tuple or a product like H \times W) rather than an expression."""
+    t = _SUBSUP_RE.sub(" ", _MATH_DROP_RE.sub(" ", tex))
+    atoms = [re.sub(r"\s+", "", m.group(0)) for m in _ATOM_RE.finditer(t)]
+    if "e^" in tex.replace(" ", ""):
+        atoms = [a for a in atoms if a != "e"]  # Euler's number
+    simple = bool(_SIMPLE_REST_RE.match(_ATOM_RE.sub("", t)))
+    return atoms, simple
+
+
+def _undefined_symbols(page: str, text: str) -> list[Issue]:
+    first_use: dict[str, int] = {}
+    explained: set[str] = set()
+    for ln in mdscan.scan(text):
+        if ln.kind in ("blank", "heading", "table"):
+            continue
+        line = ln.text
+        spans = list(mdscan.INLINE_MATH_RE.finditer(line))
+        info = [_symbol_atoms(m.group(0)[1:-1]) for m in spans]
+        for atoms, _ in info:
+            for a in atoms:
+                first_use.setdefault(a, ln.no)
+        for sent_start, sent in _sentence_spans(line):
+            idx = [k for k, m in enumerate(spans) if sent_start <= m.start() < sent_start + len(sent)]
+            naming = any(_NAMING_RE.match(line[spans[k].end():]) for k in idx)
+            for pos, k in enumerate(idx):
+                m, (atoms, simple) = spans[k], info[k]
+                if not atoms:
+                    continue
+                targets = atoms if simple else atoms[:1]
+                before, after = line[:m.start()], line[m.end():]
+                ok = False
+                # topic of the sentence, possibly the last of a chain "$a$과 $b$은"
+                j = pos
+                while j + 1 < len(idx) and _CHAIN_RE.match(line[spans[idx[j]].end():spans[idx[j + 1]].start()]):
+                    j += 1
+                if re.match(r"^(?:은|는)\s", line[spans[idx[j]].end():]):
+                    ok = True
+                if _NAMING_RE.match(after) or (naming and re.search(r"(?:을|를)\s$", before)):
+                    ok = True
+                if _COUNT_RE.match(after):
+                    ok, targets = True, atoms
+                if re.search(r"(?:은|는)\s$", before) and re.match(r"^(?:이)?(?:다|고|며|므로)(?:\s|[.,]|$)", after):
+                    ok, targets = True, atoms
+                w = _PREV_WORD_RE.search(before)
+                if w and w.group(1) not in _PREV_STOP and not _PARTICLE_END_RE.search(w.group(1)):
+                    ok = True
+                if ok:
+                    explained.update(targets)
+    issues = []
+    for sym, line in sorted(first_use.items(), key=lambda kv: kv[1]):
+        if sym not in explained:
+            issues.append(Issue("warning", page, line,
+                                f"[undefined-symbol] ${sym}$ is never said in words in this section "
+                                f"— explain it once here, e.g. \"threshold $\\tau$\" or \"$K$는 ...의 수다\""))
+    return issues
+
+
+def _sentence_spans(line: str) -> list[tuple[int, str]]:
+    out, pos = [], 0
+    for sent in _sentences(line):
+        start = line.find(sent, pos)
+        if start < 0:
+            start = pos
+        out.append((start, sent))
+        pos = start + len(sent)
+    return out or [(0, line)]
+
+
 def review(topic: Topic, settings: Settings, root: Path, only_page: str | None = None) -> list[Issue]:
     rules = load_rules(root)
     limits = settings.review_limits()
@@ -267,6 +366,8 @@ def review(topic: Topic, settings: Settings, root: Path, only_page: str | None =
         issues += _pattern_hits(page, text, rules["phrases"], "phrase")
         issues += _pattern_hits(page, text, rules["hedges"], "hedge")
         issues += _opaque_labels(page, text, rules["label_allowlist"])
+        if page != GLOSSARY:
+            issues += _undefined_symbols(page, text)
     issues += [i for i in _undefined_terms(topic, order) if not only_page or i.file == only_page]
     issues.sort(key=lambda i: (order.index(i.file) if i.file in order else 99, i.line))
     return issues

@@ -39,6 +39,11 @@ Match the depth to `audience.math_level` in SETTINGS.md.
   and state it in `intro.md`.
 - Never reuse a symbol for a different meaning in the same topic.
 - If a symbol comes back after a long gap, remind the reader: "recall $K$ is the number of classes".
+- **Every section explains its own symbols.** Each single-letter symbol ($\tau$, $K$, $\mathbf{x}$)
+  a section page uses is said in words at least once in that same page, even if an earlier
+  section already defined it: "threshold $\tau$", "$K$는 결함 영역의 수다", "...를 $\mathbf{m}_i$라 하자".
+  A bare symbol in a sentence ("$\alpha = 0.3$을 썼다") is not enough; write "max FP rate $\alpha$".
+  `tutor review` flags misses as `[undefined-symbol]`.
 
 ## Code next to math
 

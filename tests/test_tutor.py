@@ -368,6 +368,18 @@ def test_review_undefined_term(topic, capsys):
     assert "[undefined-term] 'logit'" in out(capsys)
 
 
+def test_review_undefined_symbol(topic, capsys):
+    (topic / "definition.md").write_text(
+        "# Definition\n\nMVTec AD는 $\\alpha = 0.3$을 썼다.\n"
+        "Threshold $\\tau$를 낮춘다.\n여기서 $K$는 결함 영역의 수다.\n"
+        "$k$번째 영역과 $H \\times W$ 크기의 map을 본다.\n", encoding="utf-8")
+    main(["review", "demo"])
+    o = out(capsys)
+    assert "[undefined-symbol] $\\alpha$" in o
+    for ok in ("$\\tau$", "$K$", "$k$", "$H$", "$W$"):
+        assert f"[undefined-symbol] {ok}" not in o
+
+
 def test_review_local_phrases(topic, capsys):
     local = topic.parent.parent / "skills.local" / "clear-writing"
     local.mkdir(parents=True)
