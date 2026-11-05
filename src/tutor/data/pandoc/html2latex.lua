@@ -14,6 +14,10 @@ It makes `$$ ... $$` the only display-math syntax a page needs:
   `$$ \begin{align} ... \end{align} $$` -> the align environment itself
   `$$ ... $$` without a label          -> unnumbered, as pandoc writes it
 
+It renders mermaid diagrams (```mermaid or ```{.mermaid #fig:id caption="..." width="80%"})
+to an image with mermaid-cli: PDF for LaTeX, SVG for HTML. `tutor build` passes the
+mmdc path in TUTOR_MMDC and the cache folder in TUTOR_MERMAID_DIR.
+
 It also implements code includes:
   ```{.python include="codes/softmax.py" lines="3-20"}
   ```
@@ -277,6 +281,51 @@ local function display_math(m)
 end
 
 ------------------------------------------------------------------------
+-- Mermaid diagrams
+------------------------------------------------------------------------
+local MMDC = os.getenv("TUTOR_MMDC") or ""
+local MERMAID_DIR = os.getenv("TUTOR_MERMAID_DIR") or "build/mermaid"
+
+local function file_exists(path)
+  local fh = io.open(path, "r")
+  if fh then fh:close() return true end
+  return false
+end
+
+local function mermaid(cb)
+  if not cb.classes:includes("mermaid") then return nil end
+  if MMDC == "" then
+    warn("mermaid diagram left as code: mermaid-cli (mmdc) not configured")
+    return nil
+  end
+  local ext = is_html and "svg" or "pdf"
+  local base = MERMAID_DIR .. "/" .. pandoc.utils.sha1(cb.text)
+  local out = base .. "." .. ext
+  if not file_exists(out) then
+    local fh = assert(io.open(base .. ".mmd", "w"))
+    fh:write(cb.text)
+    fh:close()
+    local args = { "-i", base .. ".mmd", "-o", out, "-q",
+                   "-b", is_html and "transparent" or "white" }
+    if ext == "pdf" then args[#args + 1] = "--pdfFit" end
+    local ok, err = pcall(pandoc.pipe, MMDC, args, "")
+    if not ok or not file_exists(out) then
+      error("mermaid diagram failed to render (check its syntax):\n" .. cb.text ..
+            "\n" .. tostring(err))
+    end
+  end
+  local img_attr = {}
+  if cb.attributes["width"] then img_attr.width = cb.attributes["width"] end
+  local img = pandoc.Image({}, out, "", pandoc.Attr("", {}, img_attr))
+  local caption = cb.attributes["caption"]
+  if caption or cb.identifier ~= "" then
+    local cap = caption and pandoc.read(caption, "markdown").blocks or {}
+    return pandoc.Figure({ pandoc.Plain({ img }) }, cap, pandoc.Attr(cb.identifier))
+  end
+  return pandoc.Para({ img })
+end
+
+------------------------------------------------------------------------
 -- Code includes
 ------------------------------------------------------------------------
 local function code_include(cb)
@@ -309,7 +358,7 @@ local function code_include(cb)
 end
 
 return {
-  { CodeBlock = code_include },
+  { CodeBlock = function(cb) return mermaid(cb) or code_include(cb) end },
   { Inlines = fix_inlines },
   { Blocks = fix_blocks },
   { Math = display_math }, -- after fix_blocks, so math restored from HTML is covered too

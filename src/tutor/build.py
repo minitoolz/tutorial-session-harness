@@ -46,6 +46,25 @@ def tex_env() -> dict:
     return env
 
 
+MERMAID_FENCE_RE = re.compile(r"^\s*(```|~~~)\s*(mermaid\b|\{[^}]*\.mermaid\b)", re.M)
+MMDC_INSTALL = (
+    "Install mermaid-cli (MIT license, needs Node.js): `npm install -g @mermaid-js/mermaid-cli`, "
+    "or set TUTOR_MMDC to an mmdc binary."
+)
+
+
+def mmdc_bin() -> str | None:
+    """mermaid-cli: $TUTOR_MMDC if set, else `mmdc` on PATH."""
+    env = os.environ.get("TUTOR_MMDC")
+    if env:
+        return env if Path(env).is_file() else None
+    return shutil.which("mmdc")
+
+
+def uses_mermaid(topic: Topic, pages: list[str]) -> bool:
+    return any(MERMAID_FENCE_RE.search((topic.path / p).read_text(encoding="utf-8")) for p in pages)
+
+
 def xelatex_available() -> bool:
     return shutil.which("xelatex", path=tex_env()["PATH"]) is not None
 
@@ -110,7 +129,17 @@ def build(topic: Topic, settings: Settings, style: str | None = None, html: bool
             )
         cmd += ["-H", str(data_path("pandoc", "styles", f"{style}.tex"))]
 
-    proc = subprocess.run(cmd, cwd=topic.path, env=tex_env(), capture_output=True, text=True)
+    env = tex_env()
+    if uses_mermaid(topic, order):
+        mmdc = mmdc_bin()
+        if not mmdc:
+            raise TutorError("This topic has mermaid diagrams, but mermaid-cli (mmdc) was not found. "
+                             + MMDC_INSTALL)
+        (topic.build_dir / "mermaid").mkdir(exist_ok=True)
+        env["TUTOR_MMDC"] = mmdc
+        env["TUTOR_MERMAID_DIR"] = "build/mermaid"  # relative to the topic folder (pandoc's cwd)
+
+    proc = subprocess.run(cmd, cwd=topic.path, env=env, capture_output=True, text=True)
     if proc.stderr.strip():
         print(proc.stderr.strip())
     if proc.returncode != 0:

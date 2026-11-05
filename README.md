@@ -14,6 +14,8 @@ in [`AGENTS.md`](AGENTS.md), the workflows in [`skills/`](skills/), and the tool
    - macOS: `brew install --cask mactex-no-gui` (or full MacTeX)
    - Debian/Ubuntu: `sudo apt install texlive-xetex texlive-latex-extra texlive-lang-cjk`
 2. `uv sync`. This installs everything else, including the pandoc binary (via `pypandoc-binary`).
+   - Optional, for mermaid diagrams: Node.js and `npm install -g @mermaid-js/mermaid-cli`
+     (or point `TUTOR_MMDC` at an `mmdc` binary).
 3. Open your agent in this directory and say hello. On its first `uv run tutor start` it will
    interview you about your background, language and preferred PDF style, and then write
    `SETTINGS.md`. To do it by hand instead, copy `SETTINGS.example.md` to `SETTINGS.md` and fill it in.
@@ -59,6 +61,7 @@ uv run tutor build softmax-basics --html   # quick preview, no LaTeX needed
 | pypandoc-binary | MIT (wrapper) / **GPL-2.0+ (bundled pandoc)** | pandoc runs as a separate CLI process for internal authoring. It isn't linked into or shipped with any product. If this repo ever becomes product code, have the ISO review it. |
 | pytest (dev) | MIT | |
 | TeX Live / MacTeX | LPPL & others | system install, not managed by uv |
+| @mermaid-js/mermaid-cli (optional) | MIT (bundles Puppeteer, Apache-2.0, and Chromium, BSD) | system install via npm, run as a CLI; only needed for mermaid diagrams |
 
 ## Development
 

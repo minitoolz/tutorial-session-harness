@@ -28,3 +28,5 @@ when-to-use: The user asks for a PDF, a preview, or a different look.
 | `Undefined control sequence` | a LaTeX macro isn't loaded; use a standard one, or add the package to a style in `src/tutor/data/pandoc/styles/` (harness change; ask the user first) |
 | `[html2latex] WARNING: <iframe> ...` | that HTML can't go in a PDF; use an image or a link instead |
 | svg image fails | install `librsvg` (`rsvg-convert`) or export the figure as pdf/png |
+| `mermaid-cli (mmdc) was not found` | ask the user to install it: `npm install -g @mermaid-js/mermaid-cli` (needs Node.js) |
+| `mermaid diagram failed to render` | the block has a mermaid syntax error; the message shows the block |

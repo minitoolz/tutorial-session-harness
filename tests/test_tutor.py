@@ -296,3 +296,36 @@ def test_html_survives_into_latex(topic):
     # $$ around align: the align environment itself, not nested in \[ ... \]
     assert "\\begin{align}\na &= b \\label{eq:ab}" in tex
     assert "\\[\\begin{align}" not in tex and "\\begin{equation}\n\\begin{align}" not in tex
+
+
+MERMAID_PAGE = (
+    "# Flow\n\nThe pipeline:\n\n"
+    "```{.mermaid #fig:flow caption=\"Inspection flow\" width=\"60%\"}\n"
+    "flowchart LR\n  A[Image] --> B{Defect?}\n  B -->|yes| C[Reject]\n  B -->|no| D[Pass]\n```\n\n"
+    "```mermaid\nsequenceDiagram\n  Camera->>Model: frame\n```\n"
+)
+
+
+def _add_mermaid_page(topic):
+    (topic / "flow.md").write_text(MERMAID_PAGE, encoding="utf-8")
+    with (topic / "index.md").open("a") as f:
+        f.write("2. [Flow](flow.md)\n")
+
+
+def test_build_without_mmdc_explains_install(topic, capsys, monkeypatch):
+    _add_mermaid_page(topic)
+    monkeypatch.setattr(build_mod, "mmdc_bin", lambda: None)
+    assert main(["build", "demo", "--html"]) == 1
+    assert "npm install -g @mermaid-js/mermaid-cli" in capsys.readouterr().err
+
+
+@pytest.mark.skipif(not build_mod.mmdc_bin(), reason="mermaid-cli (mmdc) not installed")
+def test_build_renders_mermaid(topic, capsys):
+    _add_mermaid_page(topic)
+    assert main(["build", "demo", "--html"]) == 0
+    html = (topic / "build" / "demo.html").read_text(encoding="utf-8")
+    assert "Inspection flow" in html and "flowchart LR" not in html
+    assert len(list((topic / "build" / "mermaid").glob("*.svg"))) == 2
+    if build_mod.xelatex_available():
+        assert main(["build", "demo"]) == 0
+        assert len(list((topic / "build" / "mermaid").glob("*.pdf"))) == 2

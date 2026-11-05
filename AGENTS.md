@@ -140,6 +140,18 @@ Logit
     "markdown.math.macros": { "\\label": "\\tag{#1}", "\\eqref": "\\text{(#1)}" }
     ```
     For the "Markdown All in One" extension, use the key `markdown.extension.katex.macros`.
+- **Mermaid diagrams:** a fenced `mermaid` block. The build renders it to a vector image with
+  mermaid-cli (`mmdc`). Add an id, caption and width to make it a numbered figure:
+  ````
+  ```{.mermaid #fig:pipeline caption="Inspection pipeline" width="70%"}
+  flowchart LR
+    A[Image] --> B{Defect?} -->|yes| C[Reject]
+  ```
+  ````
+  Use mermaid for flowcharts, sequences and state machines; plot data with a script in `codes/`
+  instead. Cite a captioned diagram as `Figure \ref{fig:pipeline}`. Diagrams
+  are cached in `build/mermaid/`. The VS Code preview needs the "Markdown Preview Mermaid
+  Support" extension to show them.
 - HTML that survives into the PDF: `<img src width>`, `<figure>`/`<figcaption>`, `<table>` (math and
   **markdown** inside cells work), `<sub>`, `<sup>`, `<br>`, `<details>`/`<summary>` (printed
   expanded), `<dfn>`. Prefer markdown syntax when it exists.
