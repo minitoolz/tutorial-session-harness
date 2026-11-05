@@ -14,9 +14,9 @@ Match the depth to `audience.math_level` in SETTINGS.md.
 2. **Name every symbol** right next to the equation, in words, including shapes or units when
    they help:
    ```
-   \begin{equation}
+   $$
    p_i = \frac{e^{z_i}}{\sum_{j=1}^{K} e^{z_j}} \label{eq:softmax}
-   \end{equation}
+   $$
    where $z_i$ is the score (logit) of class $i$, $K$ is the number of classes,
    and $p_i$ is the resulting probability of class $i$.
    ```
@@ -29,7 +29,8 @@ Match the depth to `audience.math_level` in SETTINGS.md.
 - One transformation per line, in `align`. Put a short reason on lines that aren't obvious,
   e.g. `&= ... && \text{(divide by } e^{c}\text{)}`.
 - Don't skip algebra the reader's `math_level` would stumble on.
-- Number only the equations you refer to later (`\label` + `\eqref`). Use `$$...$$` for the rest.
+- Number only the equations you refer to later: add `\label{eq:...}` inside the `$$...$$` block and
+  cite it with `\eqref`. Leave the label out for the rest; they stay unnumbered.
 
 ## Symbols and notation
 

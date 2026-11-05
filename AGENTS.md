@@ -102,14 +102,17 @@ Logit
 ## 4. Markdown, math and HTML (Pandoc + XeLaTeX)
 
 - Inline math `$...$`, display math `$$...$$`.
-- Numbered equations: raw LaTeX environments and references work directly:
+- Numbered equations: put a `\label` inside `$$...$$` and reference it with `\eqref`. The build
+  turns a labelled `$$` block into a numbered `equation`; a `$$` block without a label stays
+  unnumbered.
   ```
-  \begin{equation}
+  $$
   p_i = \frac{e^{z_i}}{\sum_j e^{z_j}} \label{eq:softmax}
-  \end{equation}
+  $$
   As \eqref{eq:softmax} shows, ...
   ```
-  `align`, `gather` and the mathtools/amssymb/bm macros are available.
+  For multi-line derivations use a raw `\begin{align} ... \end{align}` environment (or
+  `gather`). Raw `\begin{equation}` still works too. The mathtools/amssymb/bm macros are available.
 - HTML that survives into the PDF: `<img src width>`, `<figure>`/`<figcaption>`, `<table>` (math and
   **markdown** inside cells work), `<sub>`, `<sup>`, `<br>`, `<details>`/`<summary>` (printed
   expanded), `<dfn>`. Prefer markdown syntax when it exists.

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import shutil
 from pathlib import Path
 
@@ -58,6 +59,7 @@ def topic(ready):
         "# Definition\n\nThe **logit** is a raw score.\n\n"
         "\\begin{equation}\np_i = \\frac{e^{z_i}}{\\sum_j e^{z_j}} \\label{eq:sm}\n\\end{equation}\n\n"
         "See \\eqref{eq:sm}. Water is H<sub>2</sub>O.\n\n"
+        "$$\nq = z^2 \\label{eq:q}\n$$\n\nSee \\eqref{eq:q}.\n\n$$ r = 1 $$\n\n"
         "<table>\n<tr><th>name</th><th>value</th></tr>\n<tr><td>**fp32**</td><td>$x^2$</td></tr>\n</table>\n",
         encoding="utf-8",
     )
@@ -220,6 +222,7 @@ def test_build_html_preview(topic, capsys):
     assert main(["build", "demo", "--html"]) == 0
     html = (topic / "build" / "demo.html").read_text(encoding="utf-8")
     assert "<math" in html and "<table" in html and "<sub>2</sub>" in html
+    assert "\\label" not in html  # labelled $$ math renders without the raw label
     assert "A short abstract" in html  # abstract.md → abstract block
 
 
@@ -243,3 +246,6 @@ def test_html_survives_into_latex(topic):
     assert "\\textsubscript{2}" in tex
     assert "\\textbf{fp32} & \\(x^2\\)" in tex
     assert "\\label{eq:sm}" in tex
+    # labelled $$ math becomes a numbered equation; unlabelled stays unnumbered
+    assert "\\begin{equation}\nq = z^2 \\label{eq:q}\n\\end{equation}" in tex
+    assert re.search(r"\\\[\s*r = 1\s*\\\]", tex)

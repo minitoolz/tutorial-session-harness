@@ -9,6 +9,10 @@ element from its opening tag to its matching closing tag, serialises the
 slice back to HTML (inner markdown/math included), and re-reads it with
 pandoc's HTML reader so it becomes a real table / image / sub / sup / ...
 
+It numbers labelled display math: `$$ ... \label{eq:x} $$` becomes
+`\begin{equation} ... \end{equation}` in LaTeX, so `\eqref{eq:x}` works.
+`$$ ... $$` without a label stays unnumbered.
+
 It also implements code includes:
   ```{.python include="codes/softmax.py" lines="3-20"}
   ```
@@ -239,6 +243,19 @@ local function fix_inlines(inlines)
 end
 
 ------------------------------------------------------------------------
+-- Labelled display math
+------------------------------------------------------------------------
+local function display_math(m)
+  if m.mathtype ~= "DisplayMath" or not m.text:find("\\label{") then return nil end
+  if is_latex then
+    local tex = m.text:match("^%s*(.-)%s*$")
+    return pandoc.RawInline("latex", "\\begin{equation}\n" .. tex .. "\n\\end{equation}")
+  end
+  -- other formats (HTML preview): drop the label so it doesn't render as text
+  return pandoc.Math("DisplayMath", (m.text:gsub("\\label{[^}]*}", "")))
+end
+
+------------------------------------------------------------------------
 -- Code includes
 ------------------------------------------------------------------------
 local function code_include(cb)
@@ -274,4 +291,5 @@ return {
   { CodeBlock = code_include },
   { Inlines = fix_inlines },
   { Blocks = fix_blocks },
+  { Math = display_math }, -- after fix_blocks, so math restored from HTML is covered too
 }
